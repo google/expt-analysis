@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +16,14 @@
 # author: Reza Hosseini
 
 
+
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on '<- function'"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
+
+
 ## Find market Basket Rules and return a data frame
 FindMbRules = function(
     df, idCol, usageCol, supp=0.05, conf=0.1, orderBy="chisqPvalue") {
@@ -23,7 +32,8 @@ FindMbRules = function(
   df2 = unique(df2)
   df2 = df2[df2[ , usageCol] != "", ]
   trans = as(split(df2[ , usageCol], df2[ , idCol]), "transactions")
-  rules = apriori(trans, parameter = list(supp=supp, conf=conf, target='rules'))
+  rules = arules::apriori(
+      trans, parameter = list(supp=supp, conf=conf, target='rules'))
   rules = sort(rules, by="lift")
 
   if (length(rules) == 0) {

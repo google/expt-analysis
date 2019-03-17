@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,14 @@
 
 # author: Reza Hosseini
 
+
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on <- function"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
+
+
 ## color functions with transparency
 ColAlpha = function(colors, alpha=0.5) {
 
@@ -21,6 +30,112 @@ ColAlpha = function(colors, alpha=0.5) {
   r[4, ] = alpha * 255
   r = r / 255.0
   return(rgb(r[1, ], r[2, ], r[3, ], r[4, ]))
+}
+
+
+## compare the distribution of two variables
+# making sure that the data are cut in the same way
+DichomHist = function(
+    x, mainText="", xlab="", signif=2, step=0.1,
+    labelCol=ColALpha("red", 0.7), srt=75) {
+
+  x = signif(x, signif)
+  x = na.omit(x)
+  x = sort(x)
+  cutoffs = c(min(x), quantile(x, probs=seq(step, 1-step, step)), max(x))
+  cutoffs = unique(cutoffs)
+  x1 = cut(x, cutoffs, include.lowest=TRUE)
+  labels = unique(x1)
+
+  k = length(labels)
+  eps = 0.1
+  maxVal = max(as.numeric(100*table(x1) / sum(table(x1))))
+
+
+  par(mar=c(10.1, 6.1, 5.1, 5.1))
+  plot(
+      1:k,
+      as.numeric(100*table(x1) / sum(table(x1))),
+      col=ColAlpha("blue", 0.6),
+      type="h",
+      lwd=20,
+      xaxt="n",
+      main=mainText,
+      xlab="",
+      ylab="Frequency (%)",
+      xlim=c(1, k),
+      ylim=c(0, maxVal + 2),
+      cex.lab=1.5)
+
+  #axis(2, cex.axis=1.2)
+  axis(1, at=1:k, labels=FALSE, cex.axis=1.2)
+  text(
+      1:k, par("usr")[3]-1, labels=labels, srt=srt, pos=1,
+      xpd=TRUE, cex=1.5, col=labelCol)
+  title(xlab=xlab, line=9, cex.lab=1.6, family="Calibri Light")
+}
+
+TestDichomHist = function() {
+
+  x = c(rep(0, 100), 10:100, 1000:1200)
+  DichomHist(x, step=0.05, labelCol="red")
+}
+
+## makes gg box plots which zoom in and get rid of extreme outliers
+ZoomedBoxP = function(df, x, y, fill) {
+
+  p = ggplot(df, aes_string(x=x, y=y, fill=fill)) +
+      geom_boxplot()
+
+  if ("data.table" %in% class(df)) {
+    values = eval(parse(text = paste0("values = df[ ,",  y, "]")))
+  } else {
+    values = df[ , y]
+  }
+
+  ylim = boxplot.stats(values)[["stats"]][c(1, 5)]
+  # scale y limits based on ylim
+  p = p + coord_cartesian(ylim=ylim*1.05)
+  return(p)
+}
+
+
+TestZoomedBoxP = function() {
+
+  m = 100
+  x = sample(c("cat", "dog", "horse"), m, replace=TRUE)
+  y = rnorm(m)
+  fill = sample(c("me", "myself", "dude"), m, replace=TRUE)
+  df = data.frame("x"=x, "y"=y, "fill"=fill)
+
+  ZoomedBoxP(df=df, x="x", y="y", fill="fill")
+
+  ZoomedBoxP(df=data.table(df), x="x", y="y", fill="fill")
+
+}
+
+ExampleOfGetFailure = function() {
+
+  m = 100
+  x1 = sample(c("cat", "dog", "horse"), m, replace=TRUE)
+  y1 = rnorm(m)
+  fill1 = sample(c("me", "myself", "dude"), m, replace=TRUE)
+  df = data.frame("x"=x1, "y"=y1, "fill"=fill1)
+
+  dt = data.table(df)
+
+  ## get does not work!
+  y = "y"
+  dt[ , get(y)]
+
+  ## get works!
+  yCol = "y"
+  dt[ , get(yCol)]
+
+  ## works always; but its not pretty!
+  eval(parse(text = paste0("values = dt[ ,",  y, "]")))
+  eval(parse(text = paste0("values = dt[ ,",  yCol, "]")))
+
 }
 
 ## compare the distribution of two variables
@@ -82,6 +197,58 @@ TestPltCompareDist = function() {
   y = runif(100, 1.5, 2.5)
   PltCompareDist(1:10, 1:11)
 }
+
+
+## compare categ distbn
+PltCompare_categDist = function(df, xCol, fillCol) {
+
+  dt = data.table(df)
+
+  freqDt = dt[ , .(num=.N), by=mget(c(xCol, fillCol))]
+
+  freqDt2 = freqDt[ , .(total_num=sum(num)), by=mget(fillCol)]
+
+  freqDt3 = merge(freqDt, freqDt2, by=fillCol, all.x=TRUE, all=FALSE)
+
+  freqDt3[ , "prop"] = round(100*freqDt3[ , num] / freqDt3[ , total_num], 2)
+
+
+  p = ggplot(
+      data.frame(freqDt3),
+      aes_string(x=xCol, y="prop", fill=fillCol)) +
+      geom_bar(stat="identity", width=.5, position="dodge") + ylab("freq.") +
+      xlab(xCol) +
+      guides(fill=guide_legend(title=fillCol)) +
+      theme(
+          text=element_text(size=16),
+          axis.text.x=element_text(angle=30, hjust=1))
+
+  return(list("p"=p, "propDt"=freqDt3))
+}
+
+
+# plots a bivariate categorical variable
+PltStack_BivarCateg = function(df, xCol, fillCol) {
+
+  dt = data.table(df)
+
+  freqDt = dt[ , .(num=.N), by=mget(c(xCol, fillCol))]
+
+  freqDt[ , "prop"] = 100 * freqDt[ , num] / sum(freqDt[ , num])
+
+  pltTitle = paste("prop wrt", xCol, "and", fillCol)
+
+  p = StackPlot(
+      meltDf=data.frame(freqDt),
+      xCol=xCol,
+      yCol="prop",
+      fill=fillCol,
+      pltTitle=pltTitle)
+
+  return(list("p"=p, "freqDt"=freqDt))
+
+}
+
 
 ## makes a histogram for d, also adds the mean and median lines for d
 Plt_compareDiffWithZero = function(
@@ -299,7 +466,7 @@ PltDfColsLines = function(
       lty=ltyVec, lwd=lwd*sizeAlpha)
 }
 
-## plot bands given a lower column and an upper column: useful for CIs
+## plot bands given a lower column and an upper column: usiful for CIs
 PltBands = function(
     x, yLower, yUpper, col=ColAlpha("grey", 0.5),
     border=NA, angle=NULL, density=NULL, lwd=3) {
@@ -326,7 +493,7 @@ TestPltBands = function() {
 }
 
 ## it compares the CI from different methods (groups)
-# across xCol (eg sample size)
+# across xCol (e.g. sample size)
 # the data is given in long format i.e the groups data are stacked
 Plt_compareCiGroups = function(
     df, xCol, lowerCol, upperCol, compareCol, compareValues=NULL,
@@ -477,7 +644,7 @@ TestPlt_barsSideBySide = function() {
 
 ## plots resp wrt wrtCol
 ## while it slices wrt groupCol
-# if there are multiple values for each c(wrtCol, groupCol), it aggregates
+# if there are multilple values for each c(wrtCol, groupCol), it aggregates
 PlotWrtGroup = function(
     df, resp, wrtCol, groupCol,
     AggF=function(x){mean(x, na.rm=TRUE)}, group=NULL,
@@ -606,6 +773,9 @@ StackPlot = function(
           size=5*fontSizeAlpha)
     }
 
+  p = p + theme(
+      text=element_text(size=16),
+      axis.text.x=element_text(angle=30, hjust=1))
   return(p)
 }
 
@@ -763,18 +933,19 @@ SaveCorPlt_andLatex = function(
 ## save both plot and latex table in the specified paths
 SaveCorPlt_andLatex_andShow = function(
     df, subsetIndList, label, fnSuffix, figsPath,
-    tablesPath, tightLimits=FALSE, limits=c(-0.05, 0.7)) {
+    tablesPath, tightLimits=FALSE, limits=c(-0.05, 0.7),
+    colRange=c("white", "yellow", "green")) {
 
   fnSuffix2 = paste0(fnSuffix, label)
   res = SaveCorPlt_andLatex(
       df=df, subsetIndList=subsetIndList,  tightLimits=tightLimits,
-      limits=limits, colRange=c("white", "yellow", "green"), xLabelsAngel=45,
+      limits=limits, colRange=colRange, xLabelsAngel=45,
       figsPath=figsPath, tablesPath=tablesPath, fnSuffix=fnSuffix2,
       cropColsNum=3, tableSize=NULL)
 
   out = CorPlt(
       df=df, subsetIndList=subsetIndList, tightLimits=tightLimits,
-      limits=limits, colRange=c("white", "yellow", "green"), xLabelsAngel=45)
+      limits=limits, colRange=colRange, xLabelsAngel=45)
 
   return(out)
 }
@@ -1137,4 +1308,19 @@ BarChart_valueAdded = function(
   }
 
   return(p)
+}
+
+## Quick plot save
+QuickPltSave = function(p, fn, r=1.5) {
+
+  fn = file(fn, "w")
+
+  Cairo(
+      width=640*r, height=480*r, file=fn, type="png", dpi=120*r,
+      pointsize=10*r)
+
+  print(p)
+
+  dev.off()
+  close(fn)
 }

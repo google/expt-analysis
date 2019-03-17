@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +16,13 @@
 # author: Reza Hosseini
 
 ## functions for creating clusters using K-means and plotting them
+
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on <- function"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
+
 
 ## subset/slice df according to a condition list.
 SliceDfCondition = function(df, conditions) {
@@ -181,8 +189,10 @@ BuildFreqTable_pltSideBySide = function(
   return(tabDf)
 }
 
+
 ## add a dot between digits and letters, if a string  has both
 SepDigits = function(x, sep=".") {
+
   digits = gsub("[^[:digit:]]", "", x)
   letters = gsub("[0-9]", "", x)
   ind = which(digits != "")
@@ -601,12 +611,12 @@ OrderPlotClust = function(
   props = 100 * sizes / sum(sizes)
   df0["clust"] = (1:(dim(df0)[1]))
 
-  #meltDf = MeltDf(df=df0, idVar="clust", varying=respCols, times=times, v.names=yCol, timevar=timevar)
   meltDf = melt(df0, id="clust")
 
   if (!is.null(levOrd)) {
       lev = levOrd[length(levOrd):1]
-      meltDf[ , "variable"] = factor(as.character(meltDf[ , "variable"]), levels = lev)
+      meltDf[ , "variable"] = factor(
+          as.character(meltDf[ , "variable"]), levels = lev)
       meltDf = meltDf[order(meltDf[ , "variable"]), ]
   }
 
@@ -700,7 +710,7 @@ PlotClustResults = function(dfCl, size=c(800, 1200)) {
   set_plot_options(width=size[1], height=size[2])
 
   Multiplot(
-      pltList=c(dfCl[["clustpltList"]], pltList=dfCl[["corpltList"]]), ncol=2)#, dfCl[["pcapltList"]]), cols=2)
+      pltList=c(dfCl[["clustpltList"]], pltList=dfCl[["corpltList"]]), ncol=2)
 }
 
 Example = function() {
@@ -708,7 +718,7 @@ Example = function() {
   varNum = 6 #@param
   sampleSize = 50 #@param
   levOrd = c("X4", "X3", "X1", "X2", "X5", "X6") #@param
-  # this is to generate a variance-covariance matrix via choleski decomp
+  # this is to generate a variance-covariance matrix via Choleski decomp
   l = matrix(0, varNum, varNum)
   diag(l) = 1
   for (i in 2:varNum) {
@@ -731,15 +741,4 @@ Example = function() {
 
   PlotClustResults(dfBu)
   PlotClustResults(dfCl)
-}
-
-## depth package
-Example = function() {
-  #library("depth")
-  n = 100
-  m = 2
-  x = matrix(rnorm(n*m), n , m)
-  plot(x[ , 1], x[, 2])
-  m = med(x)[["median"]]
-  points(m[1], m[2], col="red", pch=20)
 }

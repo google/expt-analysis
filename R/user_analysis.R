@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +15,14 @@
 
 # author: Reza Hosseini
 
+# Functions for expt analysis
 
-# Functions for user_analysis
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on <- function"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
+
 
 LogitInv = function(x) {
   exp(x) / (1 + exp(x))
@@ -74,7 +81,7 @@ SimUserAttr = function(
   return(df)
 }
 
-## adding counterfactuals to user data
+## adding counter-factuals to user data
 AddCounterfactual = function(
     df, exptCol, switchPair=NULL, newColName="cfactual") {
 
@@ -242,9 +249,9 @@ GenModFcn = function(modNum) {
   return(F)
 }
 
-## this function create a wide format corresponding to the given pair
+## this function create a wide format correponding to the given pair
 # e.g. for the (expt, cont) pair
-# from the wide format, it then calculates a diff between the specified pair
+# from the wide format, it then calcuates a diff between the specified pair
 DiffDf = function(
     df,
     compareCol,
@@ -656,7 +663,7 @@ TestFitPred_multi = function() {
 }
 
 ## calculates err for difference between two data sets on valueCols
-# note that R2 is also included and its asymmetric
+# note that R2 is also included and its assymetric
 CompareContiVars = function(df1, df2, valueCols) {
 
   infoDf = setNames(
@@ -819,15 +826,15 @@ TestBalanceSampleSize = function() {
 # one is with control data only
 # one is with all data and using expt_id as a predictor
 # predictions are added for factual arms
-# as well as counter factual arms,
+# as well as counterfactual arms,
 # in which we assign a user to the opposite arm
 AddPred_toUserData = function(
     userDt_fromUsage_obs,
     predCols,
     valueCols) {
 
-  ## augment the data with counter-factual data
-  # so for each unit a counter-factual unit with opposite expt label is added
+  ## augment the data with counterfactual data
+  # so for each unit a counterfactual unit with opposite expt label is added
   # the label: cf tells us which unit is factual and which is cf
   res = AddCounterfactual(
       df=userDt_fromUsage_obs, exptCol="expt_id")
@@ -928,7 +935,7 @@ AddPred_toUserData = function(
 }
 
 ## calculate pred based means (averaged across users)
-# for treat, control and their counter-factuals
+# for treat, control and their counterfactuals
 # we also calculate n_t: user num on treatment
 # and n_c: user_num on control
 # these could be then used for calculating adjustments
@@ -1235,7 +1242,7 @@ CalcDiffMetrics_userDt = function(
 ## this adj is based on predictions on both arms assuming they are from control
 # arm, the ratio version  is  AVG_{u in c} h(u, c) / AVG_{u in t} h(u, c)
 # pred_cont_fac_mean: the prediction mean for control factual data
-# pred_cont_cf_mean: the prediction on the control counter-factual data:
+# pred_cont_cf_mean: the prediction on the control counterfactual data:
 # this is the prediction for the treatment assuming they were on the control arm.
 Metric_meanRatio = function(
     obs_treat_sum,
@@ -1645,6 +1652,7 @@ CalcAdjMetrics_fromUserDt = function(
       F=sum)
 
   ## model mean aggregates
+  #TODO: rezani: we could replace that with all data for testing
   modelPred_data = PredBased_userLevelMeans(
       userDt_fromUsage_obs=userDt_fromUsage_obs,
       valueCols=valueCols,
@@ -2046,7 +2054,7 @@ CiLengthConvg = function(
     bs=FALSE, bsNum=300,
     compareValues=c("raw", "control_data", "all_data"),
     userNumProp=NULL, parallel=FALSE, parallel_outfile="",
-    maxCoreNum=10, mainSuffix="") {
+    maxCoreNum=10, mainSuffix="", minSs=1000) {
 
   Mod = GenModFcn(bucketNum)
   dt[ , "bucket"] = Mod(as.numeric(dt[ , user_id]))
@@ -2102,9 +2110,9 @@ CiLengthConvg = function(
 
   step = round(userNum / gridNum)
   print(step)
-  init = max(c(step, 1000))
+  init = max(c(step, minSs))
   print(init)
-  x =  c(750, seq(init, userNum, by=step))
+  x =  seq(init, userNum, by=step)
 
   if (!parallel) {
     jkDfList = lapply(FUN=Jk, X=x)
@@ -2119,8 +2127,9 @@ CiLengthConvg = function(
       clusterExport(
           cl=cl,
           list(
-            "dt", "valueCols", "predCols", "CommonMetric", "metricList",
-            "bivarMetric", "Src", "Jk", "users", "Samp"),
+            "dt", "valueCols", "predCols", "CommonMetric",
+            "metricList", "bivarMetric", "Src", "Jk",
+            "users", "Samp"),
             envir=environment())
     jkDfList = parLapply(cl=cl, X=x, fun=Jk)
     stopCluster(cl)
@@ -2195,6 +2204,7 @@ Plt_adjCiSampleSizeGain = function(
 
     x2 = (1:9) / 10
     y2 = VarReduct_sampleSizeGain(x2)
+
 
     plot(
         x1, y1,
@@ -2312,7 +2322,7 @@ Plt_ssCiLengthReduct = function(
 }
 
 ## birth year to age
-BirthYearToAgeCateg = function(x, currentYear) {
+BirthYear_toAgeCateg = function(x, currentYear) {
   if (is.na(x) | is.null(x) | x == "" | x == 0) {
     return("other")
   }
@@ -2321,7 +2331,7 @@ BirthYearToAgeCateg = function(x, currentYear) {
   age = currentYear - x
 
   if (age <= 17) {
-    return("<17")
+    return("<18")
   }
 
   if (age <= 25) {
@@ -2336,5 +2346,5 @@ BirthYearToAgeCateg = function(x, currentYear) {
     return("36-50")
   }
 
-  return(">50")
+  return(">51")
 }

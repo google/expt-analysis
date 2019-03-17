@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,13 @@
 # limitations under the License.
 
 # author: Reza Hosseini
+
+
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on <- function"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
 
 # simulate usage data end to end
 SimUsageDf_e2e = function(
@@ -117,9 +125,6 @@ SimUsageDf_e2e = function(
       userVarCov=NULL)
   }
 
-  #par(mfrow=c(1, 2))
-  #TestCf(valueDf, col="count", main="test counterfactual setup")
-  #TestCf(userDf_re, col="count", main="test counterfactual setup after adding random effects")
   userDf_re_trans = TransfCols(
       df=userDf_re,
       transfList=transfList)
@@ -146,7 +151,7 @@ SimUsageDf_e2e = function(
   usageDf[ , "bucket"] = Mod(usageDf[ , "user_id"])
   usageDf[ , "date"] = format(
   as.Date(usageDf[ , "timestamp"], format="%Y-%m-%d"), "%Y-%m-%d")
-  #usageDf[ , "expt_id_cfactual"] = paste0(usageDf[ , "expt_id"], "_", usageDf[ , "cfactual"])
+
   # we add a dummy column to easily count occurrences with sum below
   usageDf[ , "imp_count"] = 1
 
@@ -215,7 +220,6 @@ SimUsage_checkResults = function(
       parallel=parallel)
 
   inputLog = usageData[["inputLog"]]
-  #Mark(inputLog, "inputLog from inside SimUsage_checkResults")
   usageDt = usageData[["usageDt"]]
   usageDt_obs = usageData[["usageDt_obs"]]
   userDf = usageData[["userDf"]]
@@ -488,7 +492,7 @@ CheckConverg = function(
       comparePair=c("treat", "cont"))
 
 
-  ## first way to calculate the raw metrics
+  ## first way to claculate the raw metrics
   G_obs =   G_adj_contDataOnly = function(n) {
     return(PointEstim(n)[["raw"]])
   }
@@ -1246,7 +1250,6 @@ OpenData_Explore_simVer = function(ver, dataPath) {
 
 Check_metricConvg_simVer = function(
     ver, metricName, userDt_fromUsage_obs, parallel=TRUE, convgDataPath) {
-  #@title check convergence of estimators from a job which is run
 
   # metricName = "sum_ratio"
   closeAllConnections()

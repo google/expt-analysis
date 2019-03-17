@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +15,14 @@
 
 # author: Reza Hosseini
 
-
 ## functions to assess rater consistency
+
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on <- function"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
+
 
 library('psych')
 library('irr')
@@ -147,10 +154,13 @@ GetConsistencyMetrics = function(
 	betweenVar = var(treatMeans)
 	meanWithinVar = mean(withinVars, na.rm=TRUE)
 
+
+	## furball:
 	# Details:
 	#   This is the ratio of the variance of the groupwise means divided by
 	#   the mean of the groupwise variances where the grouping is defined
 	#   by the ids variable
+	# Function name on furball: BwRatioCalculator
 	bwRatio = betweenVar / meanWithinVar
 
 	ssTreat = sum(DeltaFcn(predict(mod), AvgFcn(data[ , resp])))
@@ -219,8 +229,7 @@ SimulateMultipleCalcMetrics = function(
 	raterNumRange=c(2, 3, 4)) {
 
 	data = SimulRatings(
-		  unitNum=unitNum, raterNum=raterNum,
-		  unitMeanSampler=unitMeanSampler)
+		  unitNum=unitNum, raterNum=raterNum, unitMeanSampler=unitMeanSampler)
 	value = GetConsistencyMetrics(
 		  data, resp='resp', unitCol='unit', raterCol='rater')
 
@@ -355,7 +364,8 @@ ExampleSimulationStudy = function() {
 		  raterNumRange=(1:20))
 
 	dfList1 = dfList
-	legendLabels1 = c('# rater: 2-3', '# raters 6-7', '# raters 1-10', '# raters 1:20')
+	legendLabels1 = c(
+		  '# rater: 2-3', '# raters 6-7', '# raters 1-10', '# raters 1:20')
 	PlotDfList(dfList=dfList1, legendLabels=legendLabels1)
 
 	## change unit number: 20 to 400
@@ -443,6 +453,15 @@ ExampleSimulationStudy = function() {
 	PlotDfList(dfList1, legendLabels=legendLabels1)
 	PlotDfList(dfList2, legendLabels=legendLabels2)
 	PlotDfList(dfList3, legendLabels=legendLabels3)
+
+
+	##   $\Sum_i^n \Sum_j^n (x_i - x_j )^2 (i \neq j)   =    2*n \Sum_i (x_i - \bar{x})^2$
+	##   Therefore:  $pwDelta = \Sum_i \Sum_j (x_i - x_j )^2 (i \neq j)/(n(n-1)) = 2*n/(n*(n-1)) \Sum_i (x_i - \bar{x})^2 $
+	##  = 2/(n-1) \Sum_i (x_i - \bar{x})^2
+
+
+	## \Sum_u \Sum_{r \neq s} (x(u,r) - x(u,s))^2 = \Sum_u
+
 }
 
 #### Functions
@@ -454,7 +473,7 @@ ColAlpha = function(colors, alpha=1.0) {
   return(rgb(r[1,], r[2,], r[3,], r[4,]))
 }
 
-## this applies to two vectors and considers all the Cartesian product
+## this applies to two vectors and considers all the cartesian product
 PairWiseCalcAvg = function(x, y, DeltaFcn=function(x, y){(x-y)^2}, AvgFcn=mean,
 	sampleSizeLimit=NULL)  {
 
@@ -544,7 +563,10 @@ RaterConsCoef = function(
 
 Example = function() {
 
-	DeltaFcn = function(z){(z[1]-z[2])^2}
+	DeltaFcn = function(z){
+		(z[1] - z[2])^2
+	}
+
 	AvgFcn = mean
 	delta = AvgFcn((x-y)^2)
 
@@ -646,11 +668,12 @@ Example = function() {
 
 
 	RaterConsCoef(x=consData[ , 'x'], y=consData[ , 'y'], allRatings=NULL)
-	RaterConsCoef(x=consData[ , 'x'], y=consData[ , 'y'], allRatings=data[ , resp])
+	RaterConsCoef(
+		  x=consData[ , 'x'], y=consData[ , 'y'], allRatings=data[ , resp])
 }
 
 
-CreateConsDataMultipleAvg = function(
+CreateConsData_multipleAvg  = function(
 	  data, unitCol, raterCol, resp, raterNum, AvgFcn=mean) {
 
 	# data has the columns: raterCol, unitCol, resp
@@ -687,6 +710,7 @@ CreateConsDataMultipleAvg = function(
 				print(part1); print(part2)
 				part1 = part[part1]
 				part2 = part[part2]
+				# print(part1); print(part2)
 				part1 = unitData[ , resp][part1]
 				part2 = unitData[ , resp][part2]
 				ratingPair = c(AvgFcn(part1), AvgFcn(part2))

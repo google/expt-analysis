@@ -1,3 +1,4 @@
+#
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +15,15 @@
 
 # author: Reza Hosseini
 
-# helper functions for R data analysis
-# no proprietary information
+## helper functions for R data analysis
+# proprietary information
+
+DoNotUseArrows <- function() {
+  "this is just added to trigger syntax coloring based on <- function"
+  "we use = instead of <- as it is only one character"
+  "also it gives better readability to the code"
+}
+
 
 Mark = function(x, text="") {
   str = paste0(
@@ -33,11 +41,24 @@ TestMark = function() {
   Mark(x, text="this is the value of x")
 }
 
+# print a vector horizontally
+Pr = function(x) {
+
+  for (i in 1:length(x)) {
+    print(x[i])
+  }
+}
+
+
+PrCols = function(df) {
+  Pr(colnames(df))
+}
+
+
 DescribeDf = function(df) {
 
   print(paste0(
-      "this is the dim: ", "row_num: ",
-      dim(df)[1], "; col_num: ", dim(df)[2]))
+      "this is the dim: ", "row_num: ", dim(df)[1], "; col_num: ", dim(df)[2]))
   colsStr = paste(colnames(df), collapse="--")
   print(paste("these are the columns:", colsStr))
 
@@ -180,7 +201,7 @@ OpenDataFiles = function(
 }
 
 ## write a dataframe to a file with separators;
-# can be used for wiki for example.
+# can be used for qwiki for example.
 WriteDataWithSep = function(
     fn, path=NULL, data, dataSep="|", headerSep="||") {
 
@@ -379,12 +400,12 @@ Ci_forWLRatio = function(x) {
   flag = 'None'
   if (sum(x) == 0) {
     x = c(x, 1, 0)
-    flag='Zero'
+    flag = 'Zero'
   }
 
   if (sum(1-x) == 0) {
     x = c(x, 0, 1)
-    flag='Inf'
+    flag = 'Inf'
   }
 
   Bootst = function(data, F, num=1000) {
@@ -435,7 +456,6 @@ TestCi_forWLRatio = function() {
   Ci_forWLRatio(c(1, 0, 0))
   Ci_forWLRatio(c(1, 1, 1))
 }
-
 
 ## calculates CLT confidence interval
 CltCi = function(x, p=0.95) {
@@ -596,8 +616,13 @@ Remap_lowFreqCategs = function(
     for (i in 1:length(cols)) {
       col = cols[i]
       newLabel = newLabels[i]
-      set(dt, i=which(!dt[ , get(col)] %in% freqLabelsList[[col]]), j=col,
-          value=newLabel)
+      badLablesNum = sum(!dt[, get(col)] %in% freqLabelsList[[col]])
+      if (badLablesNum > 0) {
+        data.table::set(
+            dt,
+            i=which(!dt[ , get(col)] %in% freqLabelsList[[col]]),
+            j=col,
+            value=newLabel)}
     }
     return(dt)
   }
@@ -636,6 +661,7 @@ CheckColFreqDt = function(dt, col) {
   Mark(dim(freqDf), "dim(freqDf)")
   Mark(freqDf[1:min(50, nrow(freqDf)), ], "freqDf")
   return(freqDf)
+
 }
 
 ## replaces all NAs in a data.table dt, for given cols
@@ -646,7 +672,7 @@ DtReplaceNa = function(dt, cols=NULL, replaceValue=0) {
     cols = names(dt2)
   }
   for (col in cols) {
-    dt2[is.na(get(col)), (col):=replaceValue]
+    dt2[is.na(get(col)), (col) := replaceValue]
   }
   return(dt2)
 }
@@ -772,7 +798,7 @@ SignifDf = function(df, num=1) {
   if (is.null(cols)) {
     return(df)
   }
-  df2[ , cols] = signif(df[ , cols], num)
+  df[ , cols] = signif(df[ , cols], num)
   return(df)
 }
 
@@ -932,8 +958,8 @@ SplitStrCol = function(df, col, sepStr) {
       lengths(regmatches(x, gregexpr(sepStr, x)))
     }
     sepNums = unlist(lapply(FUN=F, X=dt[ , get(col)]))
-    #sepNums = dt[, F(get(col)), by = 1:nrow(dt)][ , V1]
-    #second approach but it wasn't really faster
+    # sepNums = dt[, F(get(col)), by = 1:nrow(dt)][ , V1]
+    # second approach but it wasnt really faster
     colNum = sepNums[1] + 1
   }
 
@@ -1148,6 +1174,27 @@ CapWords = function(x, splitStr=" ") {
 TestCapWords = function() {
 
   CapWords("be free.") == "Be Free."
+}
+
+# Cartesian product of string vectors
+StringCartesianProd = function(..., prefix="", sep="_") {
+
+  #paste0(prefix, levels(interaction(..., sep=sep)))
+  paste2 = function(...) {
+    paste(..., sep=sep)
+  }
+
+  df = expand.grid(...)
+  do.call(what=paste2, args=df)
+}
+
+## test for the above function
+TestStringCartesianProd = function() {
+
+  values = c("active_days_num", "activity_num")
+  products = c("assist", "search", "randomWatchApp", "photos", "multi")
+  periods = c("pre", "post")
+  valueCols = StringCartesianProd(values, products, periods, sep="_")
 }
 
 ## sorts data frames and data.tables
@@ -1378,7 +1425,6 @@ MinIndDf = function(df, col) {
   return(df[ind, , drop=FALSE])
 }
 
-
 ## debugging R code
 Example = function() {
 
@@ -1399,4 +1445,48 @@ Debug = function(F)  {
     on.exit(traceback(1))
     F()
     #traceback()
+}
+
+## check for a library dependencies
+# also tries to find out if those libs are installed by checking library(lib)
+# if not installed, it tries to install them
+# it reports un-installed ones and the unavailable ones for install
+# Install is either install.packages or a custom install function
+Check_andFix_dependencies = function(lib, Install) {
+
+  library("tools")
+  libs = package_dependencies(lib)[[1]]
+  uninstalledLibs = NULL
+  unavailLibs = NULL
+
+  F = function(lib) {
+    suppressMessages(library(lib, character.only=TRUE))
+    return(NULL)
+  }
+
+  for (lib in libs) {
+
+    x = tryCatch(
+        F(lib),
+        error=function(e) {lib})
+    uninstalledLibs = c(uninstalledLibs, x)
+
+  }
+
+  F = function(lib) {
+    suppressMessages(Install(lib))
+    return(NULL)
+  }
+
+  for (lib in uninstalledLibs) {
+
+    x = tryCatch(
+        F(lib),
+        error=function(e) {lib})
+    unavailLibs = c(unavailLibs, x)
+  }
+
+  return(list(
+      unavailLibs=unavailLibs,
+      uninstalledLibs=uninstalledLibs))
 }
