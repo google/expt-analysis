@@ -23,8 +23,9 @@ it includes some plotting functions
 ###############  PART 0: Generic all purpose python functions
 ## this prints an object and mark it
 # good for debugging
-def Mark(x='', text='', color='', bold=True,
-         underline=False):
+def Mark(
+    x=None, text='', color='',
+    bold=True, underline=False):
 
   start = ''
   end = ''
@@ -66,7 +67,7 @@ ListDir = os.listdir
 
 ## this functions prints x and
 # Also saves x in a file if fn is not None
-def CustomMarkFcn(fn=None, logTime=True):
+def CustomMarkFcn(fn=None, logTime=True, color=''):
 
   fileExists = False
   if fn != None:
@@ -77,13 +78,13 @@ def CustomMarkFcn(fn=None, logTime=True):
     appendWrite = 'w' # make a new file if not
 
   # define the Marking Fcn here
-  def F(x=None, text='', color='', bold=True, underline=False):
+  def F(x=None, text='', color=color, bold=True, underline=False):
+    timeStr = str(datetime.datetime.now())[:19]
     if fn is not None:
       orig_stdout = sys.stdout
       f = OpenFile(fn, appendWrite)
       sys.stdout = f
       if logTime:
-        timeStr = str(datetime.datetime.now())[:19]
         Mark(text='This was run at this time:' + timeStr,
              bold=False, underline=False, color='')
       Mark(x=x, text=text, color='', bold=False, underline=False)
@@ -93,7 +94,7 @@ def CustomMarkFcn(fn=None, logTime=True):
       Mark(text='This was run at this time:' + timeStr)
     Mark(x=x, text=text, color=color, bold=bold, underline=underline)
 
-  return(F)
+  return F
 
 
 '''
@@ -106,8 +107,8 @@ CustomMark(x=2, text='NO')
 PrintFcnContent = inspect.getsourcelines
 
 ## mapping a dictionary via map
-def MapDict(f, dic):
-  return dict(map(lambda (k,v): (k, f(v)), dic.iteritems()))
+#def MapDict(f, dic):
+#  return dict(map(lambda (k,v): (k, f(v)), dic.iteritems()))
 
 ## bitwise OR: same as BIT_OR in GOOGLESQL
 def BitOr(x):
@@ -283,7 +284,7 @@ def ReadDirData_parallel(
 
     return None
 
-  map(F, range(len(fileList)))
+  [F(x) for x in range(len(fileList))]
 
   if returnDfDict:
     return dfDict
@@ -643,6 +644,7 @@ def Type(x):
 ## short hashing
 def ShortHash(s, length=8):
 
+  s = str(s).encode('utf-8')
   hasher = hashlib.sha1(s)
   return base64.urlsafe_b64encode(hasher.digest()[:length])
 
@@ -1238,9 +1240,9 @@ def PlotColumnsWrtIndex(
 
   if colorList == None:
     colorList = [
-        'r', 'g', 'm', 'y', 'c', 'darkkhaki', 'royalblue', 'k',
+        'r', 'g', 'm', 'y', 'c', 'darkkhaki', 'royalblue',
         'darkred', 'crimson', 'darkcyan', 'gold', 'lime', 'black',
-        'navy', 'deepskyblue']
+        'navy', 'deepskyblue', 'k']
 
   if alphaList == None:
     alphaList = [0.7] * len(cols)
@@ -1372,7 +1374,7 @@ def PlotStackedDist_perCateg(
   df = df.sort(sortCols, ascending=False)
   m = len(cols)
   HSV_tuples = [(x*1.0/m, 0.5, 0.5) for x in range(m)]
-  RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
+  RGB_tuples = [colorsys.hsv_to_rgb(*x) for x in HSV_tuples]
   n = df.shape[0]
   x = pd.Series(n*[0])
   bar_locations = np.arange(n)
@@ -1447,7 +1449,7 @@ def Qbins(x, num=10):
 def Ubins(x, num=10):
 
   b = np.linspace(start=min(x), stop=max(x), num=num)
-  b = map(Signif(2), b)
+  b = [Signif(2)(x) for x in b]
   b = list(set(b))
   b = [float("-inf")] + b + [float("inf")]
   b.sort()
@@ -1549,7 +1551,7 @@ def PropDfTab(tab, ylim=None, categCol='categ', pltIt=False, pltTitle=''):
   d = pd.DataFrame(tab)
   d.columns = ['freq']
   e = (100.0 * d.values) / sum(d.values)
-  e = map(Signif(5), e)
+  e = [Signif(5)(x) for x in e]
   d['prop'] = e
   d[categCol] = d.index
 
@@ -1591,7 +1593,7 @@ def CutContiFcn(
   intervals = sorted(set(pd.cut(x + b[1:], bins=b)))
 
   if ():
-    levels = map(lambda x: levelPrefix + str(x), range(len(intervals)))
+    levels = [levelPrefix + str(x) for x in range(len(intervals))]
 
   Mark(levels)
   levDf = pd.DataFrame({intervalColName:intervals, levelColName:levels})
@@ -1674,7 +1676,7 @@ def GenFreqTable(x, rounding=None):
   propValues = list(distbnTab)
 
   if rounding is not None:
-    propValues = map(Signif(rounding), propValues)
+    propValues = [Signif(rounding)(x) for x in propValues]
 
   outDict = {'label':labels, 'freq':freqValues, 'prop':propValues}
   outDf = pd.DataFrame(outDict)
@@ -1772,7 +1774,7 @@ def LabelDistbn_acrossSlice(
   if pltIt:
     p = PlotColumnsWrtIndex(
       df=horizDf,
-      cols=map(lambda x: str(x) + '_prop (%)', slices),
+      cols=[str(x) + '_prop (%)' for x in slices],
       categCol=labelCol,
       orderedValues=orderedValues,
       orient='h',
@@ -1882,7 +1884,7 @@ def LabelDistbn_perSlice(
   if pltIt:
     p = PlotColumnsWrtIndex(
       df=horizDf,
-      cols=map(lambda x: str(x) + '_%', labels),
+      cols=[str(x) + '_%' for x in labels],
       categCol=sliceCol,
       orient='h',
       pltTitle=pltTitle,
@@ -1971,7 +1973,7 @@ def AddTotalsDf(
     aggDf= aggDf.reset_index()
     aggDf.columns = (sliceCols +
                      [categCol] +
-                     map(lambda x: categCol + '_' + x + '_agg', valueCols))
+                     [categCol + '_' + x + '_agg' for x in valueCols])
     outDf = pd.merge(outDf, aggDf, on=sliceCols + [categCol], how='left')
 
   # add slice (sliceCols slice) totals: same as above but we drop the categCol
@@ -1979,7 +1981,7 @@ def AddTotalsDf(
   g = df0.groupby(sliceCols)
   aggDf = g.agg(aggFnDict)
   aggDf= aggDf.reset_index()
-  aggDf.columns = sliceCols + map(lambda x: x + '_slice_total', valueCols)
+  aggDf.columns = sliceCols + [x + '_slice_total' for x in valueCols]
   outDf = pd.merge(outDf, aggDf, on=sliceCols, how='left')
 
   # reorder the columns
@@ -2145,7 +2147,7 @@ def DictOfListsToString(
   out = ''
   for key in keys:
     if (d[key] != None):
-      l = map(str, d[key])
+      l = [str(x) for x in d[key]]
       value = str(listElemSepr.join(l))
       if out != '':
         out = out + dictElemSepr
@@ -2269,7 +2271,7 @@ def PlotCIWrt(df, colUpper, colLower, sliceCols, labelCol, col=None,
 
     ciHeight = 1.0 / sliceNum
     shift = ciHeight * i
-    y = map(lambda x: (float(x) + shift), range(n))
+    y = [(float(x) + shift) for x in range(n)]
 
     assert (len(df3) == len(y)),("len(y) must be the same as merged df (df3)." +
                                  " This might be because of repeated rows in df3")
@@ -2285,7 +2287,7 @@ def PlotCIWrt(df, colUpper, colLower, sliceCols, labelCol, col=None,
   labels = [item.get_text() for item in ax.get_xticklabels()]
   labels = list(labelIndDf[labelCol].values)
   ax.set_yticklabels(labels)
-  locs, labels = plt.yticks(map(lambda x: (float(x) + 0.5), range(n)), labels)
+  locs, labels = plt.yticks([(float(x) + 0.5) for x in range(n)], labels)
   plt.setp(labels, rotation=rotation, fontweight='bold', fontsize="large")
 
   for x in addVerLines:
@@ -2486,6 +2488,40 @@ def BirthYear_toAgeCateg(x, currentYear=None):
 
   return ">51"
 
+def BirthYear_toAge(x, currentYear=None):
+
+  if currentYear is None:
+    currentYear = datetime.datetime.now().year
+
+  if x is None or x == "" or x == 0 or math.isnan(x) or x < 1940:
+    return None
+
+  x = float(x)
+  return (currentYear - x)
+
+
 """
 BirthYear_toAgeCateg(1900)
 """
+
+
+def Plt_compareDensity(df, compareCol, valueCol, compareValues=None):
+
+  if compareValues is None:
+    compareValues = set(df[compareCol].values)
+  # Iterate through the five airlines
+  for value in compareValues:
+      # Subset to the airline
+      subset = df[df[compareCol] == value]
+
+      # Draw the density plot
+      sns.distplot(
+          subset[valueCol], hist=False, kde=True,
+          kde_kws={'linewidth': 3, "alpha": 0.75},
+          label=value)
+
+  # Plot formatting
+  plt.legend(prop={'size': 8}, title=compareCol)
+  plt.title('Compare Density Plot for Multiple ' + compareCol)
+  plt.xlabel(valueCol)
+  plt.ylabel('Density')

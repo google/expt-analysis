@@ -49,11 +49,12 @@ def SeqDomainedFcn(df,
     fcnNames = fcnDict.keys()
     for key in fcnNames:
       F = fcnDict[key]
-      vec = (np.array(map(F(x), df3[seqCol].values)) *
+      vec = (np.array([F(x)(u) for u in df3[seqCol].values]) *
         np.array(df3[seqCountCol].values))
       valueDict[key] = vec.sum()
     out = Compose(valueDict)
     return(out)
+
   return(Out)
 
 ## takes sequence data, turns it to sequences of length two
@@ -480,8 +481,8 @@ def SeqConfIntDf(df,
         SubsetDfFcn=SubsetDfFcn,
         sepStr=sepStr,
         seqLengthMin=seqLengthMin)
-    values = map(G, seqSet)
-    return (values)
+    values = [G(x) for x in seqSet]
+    return values
 
   values = ValuesDf(df2)
   outDf[valueColName] = values

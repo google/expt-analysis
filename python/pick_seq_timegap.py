@@ -97,5 +97,5 @@ def TimeGapDistbn(df, respCol, timeCol, unitCol, minGap, minSliceSs):
   return outDict
 
 '''
-df = SimDependUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
+df = Sim_depUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
 '''

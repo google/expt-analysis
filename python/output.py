@@ -24,18 +24,19 @@ def CreateDir(directory):
 #### this function creates a latex file skin. i.e. the main document
 def LatexSkin(fn, docType='article', figsPath='{figs/}',
               latexInputFn='Input.tex'):
-    latex1 = '\\documentclass{' + docType + '}'
-    latex2 = ('\n \\usepackage{enumerate,amsmath,graphics,amssymb,graphicx,' +
-              'amscd,amscd,amsbsy,multirow,float,booktabs,verbatim,xy,' +
-              'geometry,import} \n'
-    latex3 = '\n \\graphicspath{' + figsPath + '} \n'
-    latex4 = ('\n \\begin{document} \n \\input{' + latexInputFn +
-              '} \n \\end{document}')
-    with open(fn, 'w') as f:
-      f.write(latex1)
-      f.write(latex2)
-      f.write(latex3)
-      f.write(latex4)
+  latex1 = '\\documentclass{' + docType + '}'
+  latex2 = ('\n \\usepackage{enumerate,amsmath,graphics,amssymb,graphicx,' +
+            'amscd,amscd,amsbsy,multirow,float,booktabs,verbatim,xy,' +
+            'geometry,import} \n'
+  latex3 = '\n \\graphicspath{' + figsPath + '} \n'
+  latex4 = ('\n \\begin{document} \n \\input{' + latexInputFn +
+            '} \n \\end{document}')
+
+  with open(fn, 'w') as f:
+    f.write(latex1)
+    f.write(latex2)
+    f.write(latex3)
+    f.write(latex4)
 
 #### this function writes the text in the center for a given latex file
 def WriteLatex(fn, text):

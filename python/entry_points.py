@@ -220,7 +220,7 @@ def FindPrevUsers(
 
   if len(users) == 0:
     return out
-  res = map(F, users)
+  res = [F(u) for u in users]
 
   df = pd.DataFrame(res)
   outPrev = df['prev'].values

@@ -108,9 +108,9 @@ def CreateSeqTab_addEventCombin(
 
   ## adding the seq property, mixture columns
   if (addSeqPropMixedCols and len(seqPropCols) > 0):
-    seqPropCols_mix = map(lambda x: 'trimmed_' + x + '_parallel_mix', seqPropCols)
+    seqPropCols_mix = ['trimmed_' + x + '_parallel_mix' for x in seqPropCols]
     seqPropCols = (
-        map(lambda x: 'trimmed_' + x + '_parallel', seqPropCols)
+        ['trimmed_' + x + '_parallel' for x in seqPropCols]
         + seqPropCols_mix)
 
   ## we only need to keep unique combinations involving countDistinctCols
@@ -421,7 +421,7 @@ def AddSeqProbCiMetrics(
 
 
 '''
-df = SimDependUsageData()
+df = Sim_depUsageData()
 
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
@@ -464,7 +464,7 @@ Mark(seqDfWithSignif.sort_values(['count'], ascending=[0])[:5])
 '''
 ## Example 2
 trim = 3
-df = SimDependUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
+df = Sim_depUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
 
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
@@ -554,8 +554,8 @@ def CalcProbMetrics_fromSummable(seqCountDf,
 
   valueCols = (
       ['count'] +
-      map(lambda x: x + '_count_agg', seqDecompCols) +
-      map(lambda x: x + '_count_agg', eventCombinCols) +
+      [x + '_count_agg' for x in seqDecompCols] +
+      [x + '_count_agg' for x in eventCombinCols] +
       ['count_slice_total','sequence_count_agg'])
 
   mainIndCols = ['sequence'] + seqDecompCols
@@ -578,7 +578,7 @@ def CalcProbMetrics_fromSummable(seqCountDf,
 
 '''
 trim = 3
-df = SimDependUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
+df = Sim_depUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
 
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
@@ -705,7 +705,7 @@ def FindSigSeq_withPenet(
 '''
 
 trim = 3
-df = SimDependUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
+df = Sim_depUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
 
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
@@ -789,20 +789,24 @@ def PlotSigSeq_concatSeqAndSlices(
   n = len(df2)
   fig, ax = plt.subplots()
   fig.set_size_inches(figSize[0], figSize[1])
-  plt.scatter(map(lambda x: (float(x) + 0.0), range(n)),
-              df2[metricCol],
-              color='blue',
-              alpha=0.8)
-  plt.bar(left=map(lambda x: (float(x) + 0.0), range(n)),
-          height=df2[metricColUpper].values,
-          bottom=df2[metricColLower].values,
-          color='blue',
-          width=0.25, alpha=0.5)
+  plt.scatter(
+      [(float(x) + 0.0) for x in range(n)],
+      df2[metricCol],
+      color='blue',
+      alpha=0.8)
+
+  plt.bar(
+      left=[(float(x) + 0.0) for x in range(n)],
+      height=df2[metricColUpper].values,
+      bottom=df2[metricColLower].values,
+      color='blue',
+      width=0.25, alpha=0.5)
 
   labels = [item.get_text() for item in ax.get_xticklabels()]
   labels = list(df2['seq_slice'].values)
   ax.set_xticklabels(labels)
-  locs, labels = plt.xticks(map(lambda x: (float(x) + 0.5), range(n)), labels)
+
+  locs, labels = plt.xticks([(float(x) + 0.5) for x in range(n)], labels)
   plt.setp(labels, rotation=rotation, fontweight='bold')
   plt.plot(range((n+2)), [1]*(n+2), color='orange', alpha=0.5)
   plt.plot(range((n+2)), [0]*(n+2), color='grey', alpha=0.5)
@@ -972,7 +976,7 @@ def SlicePlotSigSeq(
 '''
 trim = 2
 
-df = SimDependUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
+df = Sim_depUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
 
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
@@ -1064,7 +1068,7 @@ SlicePlotSigSeq(
 trim = 3
 
 ## simulate data
-df = SimDependUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
+df = Sim_depUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
 
 ## simulate data
 seqDf = CreateSeqTab_addEventCombin(

@@ -46,8 +46,8 @@ def DateTime_toConti(t):
   import calendar
   year = t.year
   l = 365 + calendar.isleap(year)
-  conti = (t.year + t.dayofyear/float(l) + t.hour/(l*24.0) +
-    t.minute/(l*24.0*60.0) + t.second/(l*24.0*3600.0))
+  conti = (t.year + t.dayofyear / float(l) + t.hour / (l*24.0) +
+    t.minute / (l*24.0*60.0) + t.second / (l*24.0*3600.0))
 
   return conti
 
@@ -70,9 +70,9 @@ def Lquantile(x, p):
   ## below is simply the vector n*p in R
   m = p*(np.array([n]*len(p)))
   #print m
-  m1 = map(math.ceil, m)
-  m2 = map(int, m1)
-  m3 = map(lambda x: max([x-1, 0]), m2)
+  m1 = [math.ceil(x) for x in m]
+  m2 = [int(x) for x in m1]
+  m3 = [max([x-1, 0]) for x in m2]
   y = list(y)
   z = [y[i] for i in m3]
   z = np.array(z)
@@ -92,9 +92,9 @@ def Rquantile(x, p):
   ## below is simply the vector n*p in R
   m = p*(np.array([n]*len(p)))
   #print m
-  m1 = map(math.floor,m)
-  m2 = map(int,m1)
-  m3 = map(lambda x: min([x,n-1]),m2)
+  m1 = [math.floor(x) for x in m]
+  m2 = [int(x) for x in m1]
+  m3 = [min([x,n-1]) for x in m2]
   y = list(y)
   z = [y[i] for i in m3]
   z = np.array(z)
@@ -185,7 +185,7 @@ def Build_datetimeStr(df, timeCol='timestamp'):
     return time1
 
 	n = len(df)
-	dt = map(Build_datetimeStr_atom, df[timeCol])
+	dt = [Build_datetimeStr_atom(x) for x in df[timeCol]]
 
 	return dt
 
@@ -492,9 +492,9 @@ n = 50
 x1 = np.round(np.random.normal(size=n))
 x2 = np.round(np.random.normal(size=n))
 x3 = np.round(np.random.normal(size=n))
-x1 = np.array(map(math.floor,x1))
-x2 = np.array(map(math.floor,x2))
-x3 = np.array(map(math.floor,x3))
+x1 = np.array([math.floor(x) for x in x1])
+x2 = np.array([math.floor(x) for x in x2])
+x3 = np.array([math.floor(x) for x in x3])
 print x1
 y = (x1+x2+x3)/4.0
 newDict = {'y':y,'x1':x1,'x2':x2,'x3':x3}
@@ -756,8 +756,8 @@ def Fseries(data, colName, omega=2*math.pi, order=1):
     columns.append(sincoln)
     columns.append(coscoln)
     u = omega*k*x
-    sin = map(math.sin, u)
-    cos = map(math.cos, u)
+    sin = [math.sin(x) for x in u]
+    cos = [math.cos(x) for x in u]
     df[sincoln] = sin
     df[coscoln] = cos
 

@@ -1038,26 +1038,28 @@ Mark(res5[:20], "global, all item combin, all items combin globally, matching sl
 ## compares usage distributions
 # we provide plots
 def CompareUsageSlices_withDistr(
-  df,
-  usageCol,
-  compareCol,
-  itemCols,
-  valueCol,
-  unitCols=None,
-  occColName="occ",
-  fillingScope="bySlice",
-  allItemCombins=True,
-  itemSliceMatchCols=None,
-  itemColsPltTitle=None,
-  condDictPre=None,
-  condDictPost=None,
-  regDictPre=None,
-  regDictPost=None,
-  SubDfPost=None,
-  extraCols=[],
-  pltTitlePre='',
-  sizeAlpha=0.75,
-  figSize=[8, 20]):
+    df,
+    usageCol,
+    compareCol,
+    itemCols,
+    valueCol,
+    unitCols=None,
+    occColName="occ",
+    fillingScope="bySlice",
+    allItemCombins=True,
+    itemSliceMatchCols=None,
+    itemColsPltTitle=None,
+    condDictPre=None,
+    condDictPost=None,
+    regDictPre=None,
+    regDictPost=None,
+    SubDfPost=None,
+    extraCols=[],
+    logScale=True,
+    lowerLim=0.0005,
+    pltTitlePre='',
+    sizeAlpha=0.75,
+    figSize=[8, 20]):
 
   if itemColsPltTitle is None:
     itemColsPltTitle = '_'.join(itemCols)
@@ -1075,30 +1077,30 @@ def CompareUsageSlices_withDistr(
     df2 = df2.reset_index()
 
   dfMetrics = CalcPerItemMetrics_withDistr(
-    df=df2,
-    itemCols=itemCols,
-    sliceCols=[compareCol],
-    usageCols=usageCols,
-    valueCol=valueCol,
-    occColName=occColName,
-    fillingScope=fillingScope,
-    allItemCombins=allItemCombins,
-    itemSliceMatchCols=itemSliceMatchCols)
+      df=df2,
+      itemCols=itemCols,
+      sliceCols=[compareCol],
+      usageCols=usageCols,
+      valueCol=valueCol,
+      occColName=occColName,
+      fillingScope=fillingScope,
+      allItemCombins=allItemCombins,
+      itemSliceMatchCols=itemSliceMatchCols)
 
   # metrics with average item with usage
   dfMetrics_avgItemNum = None
   if unitCols is not None:
     dfMetrics_avgItemNum = CalcItemUsageOcc_perUnit_withDistr(
-      df=df2,
-      itemCols=itemCols,
-      unitCols=unitCols,
-      sliceCols=[compareCol],
-      usageCols=usageCols,
-      valueCol=None,
-      occColName=occColName,
-      fillingScope=fillingScope,
-      allItemCombins=allItemCombins,
-      itemSliceMatchCols=itemSliceMatchCols)
+        df=df2,
+        itemCols=itemCols,
+        unitCols=unitCols,
+        sliceCols=[compareCol],
+        usageCols=usageCols,
+        valueCol=None,
+        occColName=occColName,
+        fillingScope=fillingScope,
+        allItemCombins=allItemCombins,
+        itemSliceMatchCols=itemSliceMatchCols)
 
   if condDictPost is not None:
     ind = BuildCondInd(df=dfMetrics, condDict=condDictPost)
@@ -1125,21 +1127,22 @@ def CompareUsageSlices_withDistr(
   pltDict = {}
 
   for valueCol2 in ['usage_count', valueCol + '_total']:
+
     pltDict[valueCol2 + '_distr'] = PlotCIWrt(
-      df=dfMetrics.copy(),
-      colUpper=valueCol2 + '_q_0.95',
-      colLower=valueCol2 + '_q_0.05',
-      sliceCols=[compareCol],
-      labelCol=usageCol,
-      col=valueCol2 + '_mean',
-      ciHeight=0.5,
-      rotation=0,
-      addVerLines=[],
-      logScale=True,
-      lowerLim=0.0005,
-      pltTitle=(pltTitlePre + valueCol2 + '_' + itemColsPltTitle
-                + ' distr (5th percentile to 95th)'),
-      figSize=figSize)
+        df=dfMetrics.copy(),
+        colUpper=valueCol2 + '_q_0.95',
+        colLower=valueCol2 + '_q_0.05',
+        sliceCols=[compareCol],
+        labelCol=usageCol,
+        col=valueCol2 + '_mean',
+        ciHeight=0.5,
+        rotation=0,
+        addVerLines=[],
+        logScale=logScale,
+        lowerLim=lowerLim,
+        pltTitle=(pltTitlePre + valueCol2 + '_' + itemColsPltTitle
+                  + ' distr (5th percentile to 95th)'),
+        figSize=figSize)
 
   valueCol2 = 'penetration'
   for col in ['penetration', 'penetration_sd', 'penetration_ci_upper',
@@ -1161,37 +1164,37 @@ def CompareUsageSlices_withDistr(
         valueCol2 + '_ci_lower'].map(lambda x: max(x, 0.0))
 
     pltDict[valueCol2 + '_ci'] = PlotCIWrt(
-      df=dfMetrics.copy(),
-      colUpper=valueCol2 + '_ci_upper',
-      colLower=valueCol2 + '_ci_lower',
-      sliceCols=[compareCol],
-      labelCol=usageCol,
-      col=valueCol2 + '',
-      ciHeight=0.5,
-      rotation=0,
-      addVerLines=[],
-      logScale=False,
-      lowerLim=None,
-      pltTitle=(pltTitlePre + valueCol2 + '_' + itemColsPltTitle
-                + ' CI for mean'),
-      figSize=figSize)
+        df=dfMetrics.copy(),
+        colUpper=valueCol2 + '_ci_upper',
+        colLower=valueCol2 + '_ci_lower',
+        sliceCols=[compareCol],
+        labelCol=usageCol,
+        col=valueCol2 + '',
+        ciHeight=0.5,
+        rotation=0,
+        addVerLines=[],
+        logScale=False,
+        lowerLim=None,
+        pltTitle=(pltTitlePre + valueCol2 + '_' + itemColsPltTitle
+                  + ' CI for mean'),
+        figSize=figSize)
 
   if unitCols is not None:
     pltDict['avg_itemWithUsage_num_ci'] = PlotCIWrt(
-      df=dfMetrics_avgItemNum.copy(),
-      colUpper='item_with_usage_count_mean_ci_upper',
-      colLower='item_with_usage_count_mean_ci_lower',
-      sliceCols=[compareCol],
-      labelCol=usageCol,
-      col='item_with_usage_count_mean',
-      ciHeight=0.5,
-      rotation=0,
-      addVerLines=[],
-      logScale=False,
-      lowerLim=None,
-      pltTitle=(pltTitlePre + 'item_with_usage_count' + '_' + itemColsPltTitle
-                + ' CI for mean'),
-      figSize=figSize)
+        df=dfMetrics_avgItemNum.copy(),
+        colUpper='item_with_usage_count_mean_ci_upper',
+        colLower='item_with_usage_count_mean_ci_lower',
+        sliceCols=[compareCol],
+        labelCol=usageCol,
+        col='item_with_usage_count_mean',
+        ciHeight=0.5,
+        rotation=0,
+        addVerLines=[],
+        logScale=False,
+        lowerLim=None,
+        pltTitle=(pltTitlePre + 'item_with_usage_count' + '_' + itemColsPltTitle
+                  + ' CI for mean'),
+        figSize=figSize)
 
 
   return {'dfMetrics': dfMetrics,
@@ -1245,7 +1248,7 @@ def CalcDiffCi_viaIndivMeanSds(
 
   if None in ssCols:
     df["dummy_ss"] = 1
-  ssCols = map(lambda x: x if x is not None else "dummy_ss", ssCols)
+  ssCols = [(x if x is not None else "dummy_ss") for x in ssCols]
   df2 = df[sliceCols + [compareCol] + meanCols + sdCols + UniqueList(ssCols)].copy()
   ind = BuildCondInd(df=df2, condDict={compareCol: comparePair})
   df2 = df2[ind].copy()
@@ -1256,7 +1259,7 @@ def CalcDiffCi_viaIndivMeanSds(
     dfSub = dfSub[sliceCols + meanCols + sdCols + UniqueList(ssCols)]
     dfSub.columns = (
       sliceCols +
-      map(lambda x: x + '_' + comparePair[i], meanCols + sdCols + UniqueList(ssCols)))
+      [x + '_' + comparePair[i] for x in (meanCols + sdCols + UniqueList(ssCols))])
     dfList.append(dfSub.copy())
 
   diffDf = pd.merge(dfList[0], dfList[1], on=sliceCols, how='outer')
@@ -1328,26 +1331,26 @@ def CalcDiffCi_viaIndivMeanSds(
 
   summDf = diffDf[
     sliceCols +
-    map(lambda x: x + '_diff_upper', meanCols) +
-    map(lambda x: x + '_diff_lower', meanCols) +
-    map(lambda x: x + '_diff_range', meanCols) +
-    map(lambda x: x + '_diff_range %', meanCols)]
+    [x + '_diff_upper' for x in meanCols] +
+    [x + '_diff_lower' for x in meanCols] +
+    [x + '_diff_range' for x in meanCols] +
+    [x + '_diff_range %' for x in meanCols]]
 
   briefDf = diffDf[
       sliceCols +
-      map(lambda x: x + '_diff_range', meanCols)]
+      [x + '_diff_range' for x in meanCols]]
 
   briefDfPer = diffDf[
     sliceCols +
-    map(lambda x: x + '_diff_range %', meanCols)]
+    [x + '_diff_range %' for x in meanCols]]
 
   briefDf.columns = (
     sliceCols +
-    map(lambda x: x + '....', meanCols))
+    [x + '....' for x in meanCols])
 
   briefDfPer.columns = (
     sliceCols +
-    map(lambda x: x + '(%) ....', meanCols))
+    [x + '(%) ....' for x in meanCols])
 
   def ColorCell(val):
     color = 'grey'
@@ -1365,11 +1368,11 @@ def CalcDiffCi_viaIndivMeanSds(
     return 'background-color: %s' % color
 
   styledBriefDf = briefDf.style.\
-    applymap(ColorCell, subset=map(lambda x: x + '....', meanCols)).\
+    applymap(ColorCell, subset=[x + '....' for x in meanCols]).\
     applymap(ColorCell2, subset=sliceCols)
 
   styledBriefDfPer = briefDfPer.style.\
-    applymap(ColorCell, subset=map(lambda x: x + '(%) ....', meanCols)).\
+    applymap(ColorCell, subset=[x + '(%) ....' for x in meanCols]).\
     applymap(ColorCell2, subset=sliceCols)
 
   outDict = {
@@ -1661,7 +1664,7 @@ def SubsetDf_hadUsageList(df, indCols, usageCol, usageList):
       propDfList=[
           PropDfFcn(usageCol=usageCol, usage=usageList[0]),
           PropDfFcn(usageCol=usageCol, usage=usageList[1])],
-      propColNames=map(lambda x: 'had_' + x + '_act', usageList))
+      propColNames=['had_' + x + '_act' for x in usageList])
 
   augDf = res['propDf']
   Mark(augDf[:5])

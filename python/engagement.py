@@ -68,10 +68,10 @@ def CalcDailyRetention(
   df, inactiveDf, prePeriod, inactivePeriod=None,
   inactiveLength=None, pltIt=False):
 
-  prePeriod = map(FloatOrStrToDatetime, prePeriod)
+  prePeriod = [FloatOrStrToDatetime(x) for x in prePeriod]
 
-  if (inactivePeriod != None):
-    inactivePeriod = map(FloatOrStrToDatetime, inactivePeriod)
+  if inactivePeriod != None:
+    inactivePeriod = [FloatOrStrToDatetime(x) for x in inactivePeriod]
   else:
     base = prePeriod[0] -  datetime.timedelta(days=1)
     inactivePeriod = [base - datetime.timedelta(days=x) for x in range(0, inactiveLength)]
@@ -118,11 +118,11 @@ def CalcRetention(
     postPeriod, interval=True,
     userCol='user_id', dateCol='date', pltIt=False):
 
-  inactivePeriod = map(FloatOrStrToDatetime, inactivePeriod)
-  prePeriod = map(FloatOrStrToDatetime, prePeriod)
-  postPeriod = map(FloatOrStrToDatetime, postPeriod)
+  inactivePeriod = [FloatOrStrToDatetime(x) for x in inactivePeriod]
+  prePeriod = [FloatOrStrToDatetime(x) for x in prePeriod]
+  postPeriod = [FloatOrStrToDatetime(x) for x in postPeriod]
 
-  if interval == True:
+  if interval:
     if len(inactivePeriod) == 2:
       inactivePeriod = DateIntervalToGrid(inactivePeriod)
     if len(prePeriod) == 2:
@@ -138,7 +138,7 @@ def CalcRetention(
       (set(dfPre[userCol]) & set(dfPost[userCol]))
       - set(df0[userCol]))
 
-  out = len(usersRetained)/float(len(users))
+  out = len(usersRetained) / float(len(users))
 
   return out
 

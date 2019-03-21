@@ -28,8 +28,6 @@ this also includes functions to extract significant transitions in the sequence
 as well as significant triples etc
 """
 
-print('sequential_data.py was sourced at this time: ' +
-      str(datetime.datetime.now())[:19])
 
 ## simulate usage data with timestamps
 ## this is for testing code etc
@@ -151,7 +149,7 @@ df = GenUsageData_withExpt(
 '''
 
 ### simulate dependent data, with repeating a subseq
-def SimDependUsageData(userNum=10, subSeqLen=3, repeatPattern=None):
+def Sim_depUsageData(userNum=10, subSeqLen=3, repeatPattern=None):
 
   df = GenUsageData(
       userNum=userNum,
@@ -166,7 +164,7 @@ def SimDependUsageData(userNum=10, subSeqLen=3, repeatPattern=None):
   l = subSeqLen + 1
 
   if repeatPattern is None:
-    repeatPattern = (len(df) / l) - 2
+    repeatPattern = (len(df) // l) - 2
 
   Mark(repeatPattern, 'repeatPattern')
   Mark(df.shape, 'df.shape')
@@ -178,33 +176,40 @@ def SimDependUsageData(userNum=10, subSeqLen=3, repeatPattern=None):
            'randomPresoApp', 'randomLocApp'],
         size=(l-len(subSeq)),
         replace=True))
-    df['prod'][l*i:l*(i+1)] = x
+
+    ind = range(l*i, l*(i+1))
+    booleanInd = [i in ind for i in range(len(df))]
+    df.loc[booleanInd, 'prod'] = x
 
   return df
 
 '''
-df = SimDependUsageData()
+df = Sim_depUsageData()
 '''
 
 ################################ seq functions #############################
 ## it generates a function which for each string s
-## returns a label in labelList if it is found
+## returns a label in labelList if it is found to be a part of string s "y in s"
 ## but if more than one element is a match then returns MIXED
 def StringContainsMixedFcn(labelList, mixedLabel='MIXED', noneLabel='None'):
 
   def F(s):
 
-    elemInd = map(lambda x, y: y in x, [s]*len(labelList), labelList)
+    elemInd = []
+
+    [(y in s) for y in labelList]
+
     v = np.array(elemInd).sum()
+
     if v > 1:
-      return(mixedLabel)
+      return mixedLabel
     if v == 1:
       ind = [i for i, j in enumerate(elemInd) if j==True]
       return labelList[ind[0]]
 
     return noneLabel
 
-  return (F)
+  return F
 
 ## adds a column to a given df about a column "col"
 # including a label coming from labelList
@@ -380,7 +385,8 @@ def CreateTimeSeq(
 
   df2 = df[respCols].copy()
   df3 = df2[df2.isnull().any(axis=1)].copy()
-  if (len(df3) > 0):
+
+  if len(df3) > 0:
     warnings.warn("\n\n the data has " + str(len(df3)) + " rows with Nulls." +
                   " CreateTimeSeq fails with Nulls." +
                   " Therefore rows with any Null are omitted."
@@ -388,19 +394,19 @@ def CreateTimeSeq(
     print(df3[:3])
     df2 = df2[~df2.isnull().any(axis=1)].copy()
 
-  if ordered == False:
+  if not ordered:
     df = df.sort_values(indCols + [timeCol])
 
   ## creating a single column to keep track of inds
   df['all_ind'] = 0
   df['ind_change'] = False
-  if (len(indCols) > 0):
+  if len(indCols) > 0:
     df = ConcatColsStr(df, cols=indCols, colName='all_ind', sepStr='-')
     df['ind_pair'] = list(zip(df['all_ind'], df['all_ind'].shift()))
     df['ind_change'] = df['ind_pair'].map(lambda x: len(set(x))) > 1
 
   ## if durations are available by providing the end timestamp, we use that
-  if (timeColEnd is None):
+  if timeColEnd is None:
     timeColEnd = timeCol
   df['delta'] = (df[timeCol] - df[timeColEnd].shift()).fillna(0)
   df['delta_sec'] = df['delta'].values / np.timedelta64(1, 's')
@@ -414,7 +420,7 @@ def CreateTimeSeq(
   # all we need to do is to cut the sequence at that point anyway
   # we also need to insure not to throw a way is resp is repeated
   # at this time (row)
-  df['is_gap'] = df['ind_change'] + df['is_gap']
+  df['is_gap'] = df['ind_change'] | df['is_gap']
   ind = [i for i,j in enumerate(df['is_gap'].values) if j == 1]
   groupNum = len(ind) + 1
   groupsNames = range(groupNum)
@@ -497,26 +503,28 @@ def DedupeSeqDf(
               enumerate(l), key=operator.itemgetter(1))
       ]
       ind = tuple([x[0] for x in inds])
-      return(ind)
+      return ind
 
   def SubseqWithInd(s, ind):
     l = s.split(sepStr)
     ind = list(ind)
     out = [l[j] for j in ind]
     outString = sepStr.join(out)
-    return(outString)
+    return outString
 
   def SubseqCol(col, subseqColName):
     df[subseqColName] = df.apply(
         lambda x: SubseqWithInd(s=x[col], ind=x['deduping_ind']), axis=1)
-    #Mark(df[col].values, 'df[col].values')
-    #Mark( df['deduping_ind'].values, ''' df['deduping_ind'].values''')
-    #df[subseqColName] = map(SubseqWithInd, df[col].values, df['deduping_ind'].values)
-    return()
+    return None
 
   df['deduping_ind'] = df[seqCol].apply(DedupingInd)
+
   SubseqCol(col=seqCol, subseqColName=dedupedColName)
-  map(lambda col: SubseqCol(col, subseqColName=col + parallelSuffix), extraCols)
+
+  def ChangeColname(col):
+    SubseqCol(col, subseqColName=col + parallelSuffix)
+
+  [ChangeColname(col) for col in extraCols]
 
   return df
 
@@ -867,29 +875,29 @@ def ShiftedSeqDf(
     return SeqShiftedList(s=s, k=k, lagK=lagK, sepStr=sepStr)['lagBasket']
 
   df2 = df.copy()
-  df2[seqCol] = map(F, df[seqCol].values)
-  df2['seq_shift_order'] = map(lambda x: range(len(x)), df2[seqCol].values)
+  df2[seqCol] = [F(x) for x in df[seqCol].values]
+  df2['seq_shift_order'] = [range(len(x)) for x in df2[seqCol].values]
 
   seqDf = FlattenDfRepField(df=df2, listCol=seqCol, sep=None)
 
-  df2['lag'] = map(H, df[seqCol].values)
+  df2['lag'] = [H(x) for x in df[seqCol].values]
   seqDf2 = FlattenDfRepField(df=df2, listCol='lag', sep=None)
   seqDf['lag'] = seqDf2['lag']
 
-  df2['lagBasket'] = map(B, df[seqCol].values)
+  df2['lagBasket'] = [B(x) for x in df[seqCol].values]
   seqDf2 = FlattenDfRepField(df=df2, listCol='lagBasket', sep=None)
   seqDf['lagBasket'] = seqDf2['lagBasket']
 
   for col in (extraCols):
-    df2[col] = map(F, df2[col].values)
+    df2[col] = [F(x) for x in df2[col].values]
     seqDf2 = FlattenDfRepField(df=df2, listCol=col, sep=None)
     seqDf[col] = seqDf2[col]
 
-    df2[col + '_lag'] = map(H, df[col].values)
+    df2[col + '_lag'] = [H(x) for x in df[col].values]
     seqDf2 = FlattenDfRepField(df=df2, listCol=col + '_lag', sep=None)
     seqDf[col + '_lag'] = seqDf2[col + '_lag']
 
-    df2[col + '_lagBasket'] = map(B, df[col].values)
+    df2[col + '_lagBasket'] = [B(x) for x in df[col].values]
     seqDf2 = FlattenDfRepField(df=df2, listCol=col + '_lagBasket', sep=None)
     seqDf[col + '_lagBasket'] = seqDf2[col + '_lagBasket']
 
@@ -935,10 +943,10 @@ def AddSeqOrdEvent(
   F2nd = GetListKthElFcn(k=1, noneValue=noneValue)
   F3rd = GetListKthElFcn(k=2, noneValue=noneValue)
   F4th = GetListKthElFcn(k=3, noneValue=noneValue)
-  df2['event_1'] = map(F1st, df3[seqCol].values)
-  df2['event_2'] = map(F2nd, df3[seqCol].values)
-  df2['event_3'] = map(F3rd, df3[seqCol].values)
-  df2['event_4'] = map(F4th, df3[seqCol].values)
+  df2['event_1'] =[F1st(x) for x in df3[seqCol].values]
+  df2['event_2'] = [F2nd(x) for x in df3[seqCol].values]
+  df2['event_3'] = [F3rd(x) for x in df3[seqCol].values]
+  df2['event_4'] = [F4th(x) for x in df3[seqCol].values]
 
   ## add subseq info
   if sepStr is not None:
@@ -1018,7 +1026,7 @@ def AddSeqLength(df, seqCol, seqLenCol='seq_length', sepStr=None):
   def F(x):
     return len(x)
 
-  df2[seqLenCol] = map(F, df3[seqCol].values)
+  df2[seqLenCol] = [F(x) for x in df3[seqCol].values]
 
   return df2
 
@@ -1109,14 +1117,14 @@ def CreateSeqDf(
       parallelSuffix='_parallel',
       method=method)
 
-  extraCols_parallel = map(lambda s: s + '_parallel', extraCols)
+  extraCols_parallel = [s + '_parallel' for s in extraCols]
 
   ## reset an existing (or add) date column to be seq_start_date
   if addResetDate_seqStartDate:
     seqDf['date'] = seqDf['seq_start_timestamp'].dt.date
 
   seqDf['full_seq_duration_secs'] =  (seqDf['seq_end_timestamp'] -
-    seqDf['seq_start_timestamp']).values/np.timedelta64(1, 's')
+    seqDf['seq_start_timestamp']).values / np.timedelta64(1, 's')
 
   for col in ['seq_start_timestamp', 'seq_end_timestamp', 'date']:
     if col in seqDf.columns:
@@ -1195,7 +1203,7 @@ def CreateSeqDf(
     df=seqDf,
     cols=(
         ['trimmed_sequence_deduped']
-        + map(lambda x: 'trimmed_'+ x, extraCols_parallel)),
+        + [('trimmed_'+ x) for x in extraCols_parallel]),
     sepStr='>',
     prefix='',
     suffix='_basket')
@@ -1368,6 +1376,85 @@ def BuildAndWriteSeqDf(
     method='split_by_ind',
     addResetDate_seqStartDate=True):
 
+  """
+  This function takes timestamped event data and create sequential data.
+
+  Inputs
+  df: data frame which has the data
+
+  timeCol: the column which include the event times
+
+  timeColEnd: the column which ends the end of the event, this could be passed
+  same as timeCol
+
+  seqDimCols: these are the building blocks for the sequence elements
+  for example  [form_factor, product]
+
+  indCols: these are partition columns used to partition the data.
+  you will be able to slice by them in the sequential data generated.
+  for example indCols = [user_id, country]
+
+  timeGap: the length of time gap (inactivity) used to break the sequences.
+
+  seqPropCols: columns which are properties of events to be also tracked.
+  we build parallel sequences to the main sequence using these properties.
+  for example if seqPropCols = []
+
+  seqPropColsDeduped: a subset of seqPropCols which are to be deduped as well
+
+  ordered: If this is True the code will assume the data is already ordered wrt
+  time. If not it will order the data.
+
+  Output:
+  output is a data frame which includes sequential data.
+  The sequences are denoted as  a1>a2>a3 where ">" is the separator
+
+  full_[col]_parallel: for a property given in col,
+  (we refer to these properties in code by seqPropCols),
+  this is the parallel sequence to “full_sequence_deduped
+
+  full_sequence_deduped:  this is the full sequence after complete deduping
+
+  full_sequence_basket: this is the basket (set) of elements appearing
+  in the full sequence
+
+  trimmed_seq_deduped: this is the sequence after deduping and trimming.
+  This is usually the most important dimension for many use cases
+
+  trimmed_seq_basket: this is the set of elements appearing
+  in the trimmed sequence given in trimmed_seq_basket
+
+  trimmed_[col]_parallel: for a given property in col, e.g. form_factor,
+  this is the parallel sequence to the trimmed sequence
+
+  seq_shift_order: the data includes full sequences of actions for a user visit,
+  but it is also augmented by shifted version of sequences.
+  To restrict the data to sequences which start from time zero,
+  choose: seq_shift_order=0
+
+  full_seq_undeduped_length: the length of the undeduped sequence
+
+  full_seq_deduped_length: you can restrict the sequences of the represented data
+  by using this variable. For example you can choose all lengths
+  bigger than 1 to explore flows better.
+
+  event_1, event_2, …  You can restrict to for example second
+  event being equal to a particular event.
+
+  [col]_mix: if a sequence includes only one value for a property given in [col]
+  this will be equal to that values.
+  If the property includes multiple values during the sequence/journey
+  then its equal to “MIXED”. For example for col = [form_factor] we might have
+  a sequence which changes the form factor: COMP > PHONE > COMP
+  which will be assigned "MIXED"
+
+  [col]_parallel is the parallel sequence built along the main sequence to
+  track a specific property.
+
+  subseq_1_2, subseq_1_2_3, subseq_1_2_3_4: these are shorter versions of the
+  main sequence data given in "full_sequence_deduped"
+  """
+
   seqDf = CreateSeqDf(
       df=df,
       timeCol=timeCol,
@@ -1409,7 +1496,7 @@ def GenRandomSeq(size, pvals=[0.5, 0.1] + [0.05]*8):
   x = np.random.multinomial(n=10, pvals=pvals, size=size)
   df = pd.DataFrame({'sequence': x.tolist()})
   def F(x):
-    x = map(str, x)
+    x = [str(y) for y in x]
     return '>'.join(x)
   df['sequence'] = df['sequence'].map(F)
   df['sequence_count'] = np.random.poisson(lam=5.0, size=size)

@@ -1,4 +1,11 @@
-# Demo code for analyzing experiment data
+# Demo code for analyzing experiment / observational data
+* R code includes code to analyze experiment data and implements
+also a variance reduction method
+* Python code includes code to create sequential (journey) data using
+timestamped event data and find statistically significant patterns
+* code has also other functionalities which we will add a guide to in future
+
+
 
 ## Disclaimer
 
@@ -7,7 +14,7 @@ analyze experiments data for generic use cases. No real data is used in the code
 fabricated data. Existence of this code does not imply any analysis as such was performed on real data.
 
 
-## Using the Code
+## Using the R Code for Variance reduction
 
 ### Make sure your data satisfies these conditions:
 * your data is aggregated: every row corresponds to a single user_id
@@ -108,3 +115,13 @@ Two methods are used to calculate CIs:
     upperThresh=c(1, 1.5, 2), lowerThresh=c(1, 0.75, 0.5))`
 
 `print(ciDf_jk)`
+
+
+
+## Using the Python Code for sequential data analysis
+
+The code will use timestamped event data to generate sequential data which
+tracks the specified properties of the events and allows for many interesting
+ways to slice the data. See sequential_data_example.py for an example
+with explanations. Also try "help(BuildAndWriteSeqDf)" for more info.
+We will also provide examples for finding significant sequences in the future.
