@@ -16,12 +16,6 @@
 # author: Reza Hosseini
 
 
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
 # simulate usage data end to end
 SimUsageDf_e2e = function(
     userNum,
@@ -271,7 +265,7 @@ SimUsage_checkResults = function(
 
   Multiplot(pltList=pltList1, ncol=3)
 
-  userDf_fromUsage_fac = ConcatColsStr(
+  userDf_fromUsage_fac = Concat_stringColsDf(
       df=userDf_fromUsage_fac,
       cols=predCols,
       colName="slice", sepStr="-")

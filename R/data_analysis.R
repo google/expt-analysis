@@ -18,13 +18,6 @@
 ## helper functions for R data analysis
 # proprietary information
 
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
-
 Mark = function(x, text="") {
   str = paste0(
       "\n *** object class: ",
@@ -272,7 +265,7 @@ FlattenDfRepField = function(df, listCol, sep=NULL) {
 
   if (!is.null(sep)) {
     F = function(x) {
-      l = as.vector(strsplit(x, ",")[[1]])
+      l = as.vector(strsplit(x, sep)[[1]])
       return(l)
     }
 
@@ -292,9 +285,9 @@ FlattenDfRepField = function(df, listCol, sep=NULL) {
 
 TestFlattenDfRepField = function() {
 
-  df = data.frame(list("var1"=c("a,b,c", "d,e,f"), "var2"=1:2, "var3"=3:4))
+  df = data.frame(list("var1"=c("a;b;c", "d;e;f"), "var2"=1:2, "var3"=3:4))
   print(df)
-  FlattenDfRepField(df=df, listCol="var1", sep=",")
+  FlattenDfRepField(df=df, listCol="var1", sep=";")
 
   df = data.frame(list("var1"=I(list(1:3, 4:6)), "var2"=1:2, "var3"=3:4))
   print(df)
@@ -303,7 +296,7 @@ TestFlattenDfRepField = function() {
 
 ## creating a single string column using multiple columns (cols)
 # and adding that to the data frame
-ConcatColsStr = function(df, cols, colName=NULL, sepStr="-") {
+Concat_stringColsDf = function(df, cols, colName=NULL, sepStr="-") {
 
   x = ""
   if (is.null(colName)){
@@ -321,10 +314,10 @@ ConcatColsStr = function(df, cols, colName=NULL, sepStr="-") {
   return(df)
 }
 
-TestConcatColsStr = function() {
+TestConcat_stringColsDf = function() {
 
   df = data.frame(list("a"=1:3, "b"=c("rr",  "gg", "gg"), "c"=1:3))
-  ConcatColsStr(df=df, cols=c("a", "b", "c"), colName=NULL, sepStr="-")
+  Concat_stringColsDf(df=df, cols=c("a", "b", "c"), colName=NULL, sepStr="-")
 }
 
 ## dropping some columns from a data frame

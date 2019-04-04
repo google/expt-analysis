@@ -85,7 +85,7 @@ df = df.sort_values(['time'])
 Mark(df)
 
 condCols = ['prod', 'form_factor']
-condValues = ['randomBrowseApp', None]
+condValues = [browsingFeat, None]
 
 FindPrev0(
     df,
@@ -124,7 +124,7 @@ def FindPrev(df,
       'ts2': None}
 
   dfUser = df[df[userCol] == user]
-  dfUser = ConcatColsStr(df=dfUser, cols=condCols, colName="cond", sepStr='-')
+  dfUser = Concat_stringColsDf(df=dfUser, cols=condCols, colName="cond", sepStr='-')
   out = FindPrev0(
       df=dfUser,
       condCols=condCols,
@@ -179,7 +179,7 @@ df = GenUsageDf_forTesting()
 FindPrev(df=df,
          user='1',
          condCols=['prod', 'form_factor'],
-         condValues=['randomLocApp', 'COMP'],
+         condValues=['locFeat', 'COMP'],
          userCol='user_id',
          timeCol='time',
          timeGap=10 * 60,
@@ -236,7 +236,7 @@ FindPrevUsers(
     users=map(lambda x: str(x), range(10)),
     dfDetails=df,
     condCols=['prod', 'form_factor'],
-    condValues=['randomPresoApp', 'PHN'],
+    condValues=['PresFeat', 'PHN'],
     userCol='user_id',
     timeCol='time',
     timeGap=6000,

@@ -103,11 +103,11 @@ The sequences are denoted as  a1>a2>a3 where ">" is the separator
 
 full_[col]_parallel: for a property given in col,
 (we refer to these properties in code by seqPropCols),
-this is the parallel sequence to “full_sequence_deduped
+this is the parallel sequence to “full_seq_deduped
 
-full_sequence_deduped:  this is the full sequence after complete deduping
+full_seq_deduped:  this is the full sequence after complete deduping
 
-full_sequence_basket: this is the basket (set) of elements appearing
+full_seq_basket: this is the basket (set) of elements appearing
 in the full sequence
 
 trimmed_seq_deduped: this is the sequence after deduping and trimming.
@@ -144,7 +144,7 @@ which will be assigned "MIXED"
 track a specific property.
 
 subseq_1_2, subseq_1_2_3, subseq_1_2_3_4: these are shorter versions of the
-main sequence data given in "full_sequence_deduped"
+main sequence data given in "full_seq_deduped"
 """
 
 

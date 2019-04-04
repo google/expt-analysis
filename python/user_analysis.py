@@ -26,11 +26,13 @@ Here is an explanation of the input to most of the functions
 itemCols: these are the columns which identify an item.
 e.g. itemCols = ['user_id', 'date']  or itemCols = ['user_id']
 usageCols: these are the usages we are interested in
-e.g. usageCols = ["app"] means we would like to compare/calculate usage of apps
-e.g. usageCols = ["os", product"] means
+e.g. usageCols = ["feature"] means
+we would like to compare/calculate usage of features
+e.g. usageCols = ["surface", product"] means
 we would like to compare product usages across surfaces
 e.g. we the usages could look like:
-someOs-randomEmailApp, someOs-search, randomOs-randomSocialApp, otherOs-randomEmailApp
+someSurface-mailingFeat, someSurface-search, randSurface-socialFeat,
+otherSurface-mailingFeat
 sliceCols are the slices of data we are interested in
 for example sliceCols = [country, gender] or sliceCols = [expt]
 
@@ -53,7 +55,7 @@ def CountItemsPerSlice(df, itemCols, sliceCols, newColName='item_num'):
   df2 = df.copy()
 
   # adding a single item col which captures all itemCols
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
       df=df2,
       cols=itemCols,
       colName='item_comb',
@@ -100,14 +102,14 @@ def CalcPerItemMetrics(
     adjustDenom=None):
 
   valueColInit = valueCol
-  if (valueCol is None):
+  if valueCol is None:
     valueCol = 'dummy'
     df[valueCol] = 1
   ## adding an occurrence column
   df[occColName] = 1
 
   # adding a single column to capture all itemCols dimensions
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
       df=df.copy(),
       cols=itemCols,
       colName='item',
@@ -232,7 +234,7 @@ def CalcItemPenet(
     perItemDf3[col] = (100 * perItemDf3[col]).map(Signif(3))
 
   if pltIt:
-    perItemDf3 = ConcatColsStr(
+    perItemDf3 = Concat_stringColsDf(
         df=perItemDf3,
         cols=usageCols,
         colName='usage_combin',
@@ -372,12 +374,12 @@ df = GenUsageData_withExpt(
     timeGridLenPair=['2h', '2h'],
     durLimitPair = [3600, 3000],
     prodsChoicePair = [
-        ['randomBrowseApp', 'randomEmailApp',
-         'randomDocApp', 'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp'],
-        ['randomBrowseApp', 'randomEmailApp',
-         'randomDocApp', 'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp', 'randomBrowseApp', 'randomDocApp']])
+        [browsingFeat, 'mailingFeat',
+         'editingFeat', 'exploreFeat', 'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat'],
+        [browsingFeat, 'mailingFeat',
+         'editingFeat', 'exploreFeat', 'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat', browsingFeat, 'editingFeat']])
 
 itemCols = ['user_id', 'date']
 compareCol = 'expt'
@@ -702,7 +704,7 @@ def CalcPerItemMetrics_withDistr(
   Mark(df.shape, text="This is the size of the original data: ", color="green")
   Mark(df2.shape, text="This is the size of the completed data: ", color="red")
 
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
       df=df2,
       cols=itemCols,
       colName='item',
@@ -866,7 +868,7 @@ Mark(
 # for example itemCols = [user_id, date]  and  unitCols=[user_id]
 # we count # [item, usage] for each unit
 # so for example for one user,
-# we find out the number of dates where user used usage:randomSocialApp
+# we find out the number of dates where user used usage:socialFeat
 def CalcItemUsageOcc_perUnit_withDistr(
   df,
   itemCols,
@@ -902,13 +904,13 @@ def CalcItemUsageOcc_perUnit_withDistr(
   Mark(df.shape, text="This is the size of the original data: ", color="green")
   Mark(filled.shape, text="This is the size of the completed data: ", color="red")
 
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
     df=filledDf.copy(),
     cols=itemCols,
     colName='item',
     sepStr='-')
 
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
     df=df2.copy(),
     cols=unitCols,
     colName='unit',
@@ -1439,12 +1441,12 @@ df = GenUsageData_withExpt(
     timeGridLenPair=['2h', '2h'],
     durLimitPair = [3600, 3000],
     prodsChoicePair = [
-        ['randomBrowseApp', 'randomEmailApp', 'randomDocApp',
-         'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp'],
-        ['randomBrowseApp', 'randomEmailApp', 'randomDocApp',
-         'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp', 'randomBrowseApp']])
+        [browsingFeat, 'mailingFeat', 'editingFeat',
+         'exploreFeat', 'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat'],
+        [browsingFeat, 'mailingFeat', 'editingFeat',
+         'exploreFeat', 'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat', browsingFeat]])
 
 
 itemCols = ['user_id', 'date']
@@ -1552,21 +1554,21 @@ def CheckIndCols_satisfyProp_atleastOnce(
 
 '''
 df = pd.DataFrame(columns=['country', 'user_id', 'date', 'prod'])
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPhotoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomSheetApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomSheetApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomDocApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomDocApp']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'photoFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'exploreFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'exploreFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'editingFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'editingFeat']
 
 def PropRow(row):
-  out = float(row['prod'] == 'randomDocApp')
+  out = float(row['prod'] == 'editingFeat')
   return(out)
 def PropDf(df):
-  return(df['prod'] == 'randomDocApp')
+  return(df['prod'] == 'editingFeat')
 CheckIndCols_satisfyProp_atleastOnce(
     df=df, indCols=['user_id'], PropRow=PropRow, propColName='prop')
 CheckIndCols_satisfyProp_atleastOnce(
@@ -1611,21 +1613,21 @@ def CheckIndCols_satisfyMultipleProp(
 
 '''
 df = pd.DataFrame(columns=['country', 'user_id', 'date', 'prod'])
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPhotoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '0', '2017-04-12', 'randomSheetApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomPresoApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomSheetApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomDocApp']
-df.loc[len(df)] = ['US', '2', '2017-04-12', 'randomDocApp']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'photoFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '0', '2017-04-12', 'exploreFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'PresFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'exploreFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'editingFeat']
+df.loc[len(df)] = ['US', '2', '2017-04-12', 'editingFeat']
 
 def PropDf1(df):
-  return(df['prod'] == 'randomDocApp')
+  return(df['prod'] == 'editingFeat')
 
 def PropDf2(df):
-  return(df['prod'] == 'randomPresoApp')
+  return(df['prod'] == 'PresFeat')
 
 CheckIndCols_satisfyMultipleProp(
     df=df,
@@ -1719,13 +1721,13 @@ def BalanceSampleSize(
     itemCols = ['dummy_item']
     df2['dummy_item'] = range(len(df2))
 
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
     df=df2.copy(),
     cols=itemCols,
     colName='item_combin',
     sepStr='-')
 
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
     df=df2.copy(),
     cols=sliceCols,
     colName='slice_combin',
@@ -1820,7 +1822,7 @@ def BalanceSampleSize_wrtCols(
     sliceCombinValues_toBalance=None):
 
   df2 = df.copy()
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
     df=df2.copy(),
     cols=wrtCols,
     colName='wrt_combin',
@@ -1844,7 +1846,7 @@ def BalanceSampleSize_wrtCols(
   boolColName = 'balanced_' + sliceColsStr + '__' + itemColsStr
 
   df0 = fullDf[sliceCols + wrtCols + itemCols + [boolColName]].copy()
-  df0 = ConcatColsStr(
+  df0 = Concat_stringColsDf(
     df=df0.copy(),
     cols=itemCols,
     colName='item_combin',
@@ -1906,7 +1908,7 @@ def UserPerDate_simple(
   df0 = df.copy()
 
   if len(usageCols) > 1:
-    df0 = ConcatColsStr(df0, cols=usageCols, colName=None, sepStr='-')
+    df0 = Concat_stringColsDf(df0, cols=usageCols, colName=None, sepStr='-')
   usageCol = '-'.join(usageCols)
 
   condStr = DictOfListsToString(
@@ -1945,7 +1947,7 @@ def UserPerDate_simple(
       sizeAlpha=sizeAlpha)
 
   itemCols = [userCol, dateCol]
-  df0 = ConcatColsStr(
+  df0 = Concat_stringColsDf(
       df=df0,
       cols=itemCols,
       colName='item',

@@ -36,7 +36,7 @@ def SeqDomainedFcn(df,
   if sepStr != None:
     df2 = df2.assign(**{seqCol: df2[seqCol].str.split(sepStr)})
   if seqCountCol == None:
-    seqCountCol = 'sequence_count'
+    seqCountCol = 'seq_count'
     df2[seqCountCol] = 1
   ## we drop sequences whose length are less than 2
   df2 = df2[df2[seqCol].apply(len) >= seqLengthMin]
@@ -137,7 +137,7 @@ df = GenUsageData(userNum=50, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
 setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 ElemsExists = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod',
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
 indCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
@@ -145,13 +145,13 @@ def SubsetDfFcn(x):
 #Mark(SubsetDfFcn('>'.join(pair))(df=df)['user_id'].value_counts())
 seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=2*60, trim=5, keepIndCols=True, ordered=False)
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=3, sepStr='>')
-GetOdds = SeqTransOddsFcn(df=seqDf.copy(), seqCol='sequence',
-seqCountCol='sequence_count',
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
+GetOdds = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
+seqCountCol='seq_count',
   SubsetDfFcn=None, sepStr='>')
-GetOdds_subset = SeqTransOddsFcn(df=seqDf.copy(), seqCol='sequence',
-  seqCountCol='sequence_count', SubsetDfFcn=SubsetDfFcn, sepStr='>')
-#print(seqDf[['sequence', 'sequence_count']])
+GetOdds_subset = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
+  seqCountCol='seq_count', SubsetDfFcn=SubsetDfFcn, sepStr='>')
+#print(seqDf[['seq', 'seq_count']])
 
 def H(s):
   Mark(s)
@@ -159,12 +159,12 @@ def H(s):
   Mark([GetOdds(s), GetOdds_subset(s)])
   Mark([GetOdds2(s), GetOdds_subset2(s)])
 
-H('randomDocApp>randomPhotoApp')
-H('randomBrowseApp>randomPhotoApp')
-H('randomDocApp>randomWatchApp')
-H('randomWatchApp>randomDocApp')
-H('randomPhotoApp>randomWatchApp')
-H('randomWatchApp>randomPhotoApp')
+H('editingFeat>photoFeat')
+H('browsingFeat>photoFeat')
+H('editingFeat>randomWatchApp')
+H('randomWatchApp>editingFeat')
+H('photoFeat>randomWatchApp')
+H('randomWatchApp>photoFeat')
 H('randomWatchApp>randomWatchApp')
 '''
 
@@ -260,7 +260,7 @@ df = GenUsageData(userNum=100, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
 setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 ElemsExists = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod',
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
 indCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
@@ -269,23 +269,23 @@ def SubsetDfFcn(x):
 seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=2*60, trim=5, keepIndCols=True, ordered=False)
 
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=3, sepStr='>')
-GetTripleOdds = SeqTripleOddsFcn(df=seqDf.copy(), seqCol='sequence',
-seqCountCol='sequence_count',
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
+GetTripleOdds = SeqTripleOddsFcn(df=seqDf.copy(), seqCol='seq',
+seqCountCol='seq_count',
   SubsetDfFcn=None, sepStr='>')
-GetTripleOdds_subset = SeqTripleOddsFcn(df=seqDf.copy(), seqCol='sequence',
-  seqCountCol='sequence_count', SubsetDfFcn=SubsetDfFcn, sepStr='>')
-#print(seqDf[['sequence', 'sequence_count']])
+GetTripleOdds_subset = SeqTripleOddsFcn(df=seqDf.copy(), seqCol='seq',
+  seqCountCol='seq_count', SubsetDfFcn=SubsetDfFcn, sepStr='>')
+#print(seqDf[['seq', 'seq_count']])
 
 def H(s):
   Mark(s)
   print(ElemsExists(s.split('>'))['elems_exist'].mean())
   Mark([GetTripleOdds(s), GetTripleOdds_subset(s)])
 
-H('randomDocApp>randomPhotoApp>randomDocApp')
-H('randomBrowseApp>randomPhotoApp>randomBrowseApp')
-H('randomDocApp>randomWatchApp>randomDocApp')
-H('randomWatchApp>randomDocApp>randomWatchApp')
+H('editingFeat>photoFeat>editingFeat')
+H('browsingFeat>photoFeat>browsingFeat')
+H('editingFeat>randomWatchApp>editingFeat')
+H('randomWatchApp>editingFeat>randomWatchApp')
 '''
 
 def SeqQuadOddsFcn(df,
@@ -393,7 +393,7 @@ df = GenUsageData(userNum=200, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
 setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 ElemsExists = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod', indCols=['user_id'])
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', indCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
@@ -401,31 +401,31 @@ def SubsetDfFcn(x):
 seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=3*60, trim=4, keepIndCols=True, ordered=False)
 
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=4, sepStr='>')
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=4, sepStr='>')
 
-GetOdds = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                         seqCountCol='sequence_count',
+GetOdds = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='seq',
+                         seqCountCol='seq_count',
                          SubsetDfFcn=None, sepStr='>')
-GetOdds_subset = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='sequence',
-  seqCountCol='sequence_count', SubsetDfFcn=SubsetDfFcn, sepStr='>')
-#print(seqDf[['sequence', 'sequence_count']])
+GetOdds_subset = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='seq',
+  seqCountCol='seq_count', SubsetDfFcn=SubsetDfFcn, sepStr='>')
+#print(seqDf[['seq', 'seq_count']])
 
 def H(s):
   Mark(s)
   print(ElemsExists(s.split('>'))['elems_exist'].mean())
   Mark([GetOdds(s), GetOdds_subset(s)])
 
-H('randomDocApp>randomPhotoApp>randomDocApp>randomPhotoApp')
-H('randomBrowseApp>randomPhotoApp>randomBrowseApp>randomPhotoApp')
-H('randomDocApp>randomWatchApp>randomDocApp>randomWatchApp')
-H('randomWatchApp>randomDocApp>randomWatchApp>randomDocApp')
-H('randomDocApp>randomEmailApp>randomLocApp>randomBrowseApp_IMAGES')
-H('randomWatchApp_MUSIC>randomPresoApp>randomWatchApp_MUSIC>SIGN_IN')
-H('randomWatchApp>randomBrowseApp_IMAGES>randomPresoApp>randomWatchApp_MUSIC')
-H('randomPresoApp>randomBrowseApp_IMAGES>randomPresoApp>randomSheetApp')
+H('editingFeat>photoFeat>editingFeat>photoFeat')
+H('browsingFeat>photoFeat>browsingFeat>photoFeat')
+H('editingFeat>randomWatchApp>editingFeat>randomWatchApp')
+H('randomWatchApp>editingFeat>randomWatchApp>editingFeat')
+H('editingFeat>mailingFeat>locFeat>browsingFeat_IMAGES')
+H('randomWatchApp_MUSIC>PresFeat>randomWatchApp_MUSIC>SIGN_IN')
+H('randomWatchApp>browsingFeat_IMAGES>PresFeat>randomWatchApp_MUSIC')
+H('PresFeat>browsingFeat_IMAGES>PresFeat>exploreFeat')
 
-seqDf2 = seqDf[seqDf['sequence'].apply(lambda x: x.count('>')) == 3]
-obsSeq = list(set(seqDf['sequence'].values))
+seqDf2 = seqDf[seqDf['seq'].apply(lambda x: x.count('>')) == 3]
+obsSeq = list(set(seqDf['seq'].values))
 obsSeq
 
 H(obsSeq[0])
@@ -522,25 +522,25 @@ size = 10
 x = np.random.poisson(lam=1.0, size=size)
 x = 1
 df = pd.DataFrame({
-    'sequence':np.random.choice(a=['a>k>b>k>d>b>k>ba>b>a>k>a>b>f>h>k',
+    'seq':np.random.choice(a=['a>k>b>k>d>b>k>ba>b>a>k>a>b>f>h>k',
                                    'b>c>f>k>f>h>b>a>d>a>l>b>a>b',
                                    'f>k>v>f>g>a>b>d>a>b>a>b',
                                    'f>h>k>b>a>e>k>a>b'],
                                 size=size,
                                 replace=True),
-    'sequence_count':x,
+    'seq_count':x,
     'col2':np.random.uniform(low=0.0, high=100.0, size=size).round(0),
     'col3':np.random.uniform(low=0.0, high=100.0, size=size).round(0),
     'col4':np.random.uniform(low=0.0, high=100.0, size=size).round(0)})
 
-seqDf = ShiftedSeqDf(df=df, seqCol='sequence', k=3, sepStr='>')
-#seqDf2 = AddSeqOrdEvent(df=seqDf, seqCol='sequence', sepStr='>')
+seqDf = ShiftedSeqDf(df=df, seqCol='seq', k=3, sepStr='>')
+#seqDf2 = AddSeqOrdEvent(df=seqDf, seqCol='seq', sepStr='>')
 #print(seqDf)
-Fcn = SeqTransOddsFcn(df=seqDf, seqCol='sequence',
-                      seqCountCol='sequence_count', sepStr='>')
+Fcn = SeqTransOddsFcn(df=seqDf, seqCol='seq',
+                      seqCountCol='seq_count', sepStr='>')
 print(Fcn('a>b'))
 print(Fcn('b>x'))
-SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=SeqTransOddsFcn, seqCountCol=None,
+SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn, seqCountCol=None,
   shift=True, sepStr='>', bsSize=5, seqLengthMin=2)
 
 ## Example 2
@@ -549,23 +549,23 @@ df = GenUsageData(userNum=8, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
 setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod',
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
                                      indCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 
-pair = ['randomBrowseApp', 'randomWatchApp']
+pair = [browsingFeat, 'randomWatchApp']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(subSet=pair)(df)['user_id'].value_counts())
 
 seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=2*60, trim=2, keepIndCols=True, ordered=False)
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=3, sepStr='>')
-out1 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=SeqTransOddsFcn,
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
+out1 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
   seqCountCol=None, SubsetDfFcn=None, shift=True, sepStr='>', bsSize=5,
                     seqLengthMin=2)
-out2 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=SeqTransOddsFcn,
+out2 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
   seqCountCol=None, SubsetDfFcn=SubsetDfFcn, shift=True, sepStr='>', bsSize=5,
                     seqLengthMin=2)
 #print(out2)
@@ -579,48 +579,48 @@ setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
 
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod',
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
                                      indCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 
-pair = ['randomBrowseApp', 'randomWatchApp']
+pair = [browsingFeat, 'randomWatchApp']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(pair)(df)['user_id'].value_counts())
 
 seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
                                timeCol='time', timeGap=2*60, trim=2,
                                keepIndCols=True, ordered=False)
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=3, sepStr='>')
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
 
-F = SeqTransOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                    seqCountCol='sequence_count', SubsetDfFcn=None, sepStr='>')
-G = SeqTransOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                    seqCountCol='sequence_count', SubsetDfFcn=SubsetDfFcn,
+F = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
+                    seqCountCol='seq_count', SubsetDfFcn=None, sepStr='>')
+G = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
+                    seqCountCol='seq_count', SubsetDfFcn=SubsetDfFcn,
                     sepStr='>')
 
-print(seqDf[['sequence', 'sequence_count']])
+print(seqDf[['seq', 'seq_count']])
 def H(pair):
   print([F(pair[0] + '>' + pair[1]), G(pair[0] + '>' + pair[1])])
 
-H(['randomPhotoApp', 'randomBrowseApp'])
-H(['randomBrowseApp', 'randomPhotoApp'])
-H(['randomDocApp', 'randomWatchApp'])
+H(['photoFeat', browsingFeat])
+H([browsingFeat, 'photoFeat'])
+H(['editingFeat', 'randomWatchApp'])
 bsSize = 10
 
-out1 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=SeqTransOddsFcn,
+out1 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
                     seqCountCol=None, SubsetDfFcn=None, shift=True, trim=2,
                     sepStr='>', bsSize=bsSize, valueColName='value',
                     seqLengthMin=2)
 
-out2 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=SeqTransOddsFcn,
+out2 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
                     seqCountCol=None, SubsetDfFcn=SubsetDfFcn, shift=True,
                     trim=2, sepStr='>', bsSize=bsSize, valueColName='value',
                     seqLengthMin=2)
 
 
-compareDf = pd.merge(out1, out2, on=['sequence'], how='outer')
+compareDf = pd.merge(out1, out2, on=['seq'], how='outer')
 plt.scatter(compareDf['value_x'], compareDf['value_y'])
 '''
 
@@ -663,22 +663,22 @@ def SeqSigValueDf(df,
     df=seqDf,
     integFcn=sum,
     integOutCols=['seq_shift_order', 'seq_length'],
-    valueCols=['sequence_count'])
+    valueCols=['seq_count'])
 
   ## we make sure all the sequences if the data have the same length
   # by adding blanks
   # this will avoid unexpected dropping later on when calculating probabilities
   eventCols = ['event_1', 'event_2', 'event_3', 'event_4'][:seqLengthMin]
-  seqTabDf['sequence'] = seqTabDf['event_1']
+  seqTabDf['seq'] = seqTabDf['event_1']
   for i in range(1, seqLengthMin):
-    seqTabDf['sequence'] = seqTabDf['sequence'] + '>' + seqTabDf[eventCols[i]]
+    seqTabDf['seq'] = seqTabDf['seq'] + '>' + seqTabDf[eventCols[i]]
 
   ## we check if the pair exists for the indCols
   SubsetDfFcn = None
 
   if checkElemsExist:
     setDf = GetSetIndCols(df=df, respCol='-'.join(seqDimCols), indCols=indCols)
-    SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf,
+    SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf,
                                          setCol='-'.join(seqDimCols),
                                          indCols=indCols)
     def SubsetDfFcn(x):
@@ -692,9 +692,9 @@ def SeqSigValueDf(df,
   def CalcPerSlice(group):
     valueDf = SeqConfIntDf(
         df=group,
-        seqCol='sequence',
+        seqCol='seq',
         Fcn=Fcn,
-        seqCountCol='sequence_count',
+        seqCountCol='seq_count',
         SubsetDfFcn=SubsetDfFcn,
         shift=False,
         trim=trim,
@@ -732,9 +732,9 @@ def SeqSigValueDf(df,
   sameDf = sameDf.sort_values(['ci_width'])
 
   if fn0 != None:
-    #incDf['sequence'] = incDf['sequence'].map(StrReplace)
-    #decDf['sequence'] = decDf['sequence'].map(StrReplace)
-    #sameDf['sequence'] = sameDf['sequence'].map(StrReplace)
+    #incDf['seq'] = incDf['seq'].map(StrReplace)
+    #decDf['seq'] = decDf['seq'].map(StrReplace)
+    #sameDf['seq'] = sameDf['seq'].map(StrReplace)
     fn1 = fn0 + '_inc.csv'
     fn2 = fn0 + '_dec.csv'
     #fn3 = fn0 + '_same.csv'
@@ -760,39 +760,39 @@ df = GenUsageData(userNum=10, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
 setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod', indCols=['user_id'])
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', indCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
-pair = ['randomBrowseApp', 'randomWatchApp']
+pair = [browsingFeat, 'randomWatchApp']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(pair)(df)['user_id'].value_counts())
 seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
                                timeCol='time', timeGap=2*60, trim=2,
                                keepIndCols=True, ordered=False)
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=3, sepStr='>')
-F = SeqTransOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                    seqCountCol='sequence_count', SubsetDfFcn=None, sepStr='>')
-G = SeqTransOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                    seqCountCol='sequence_count', SubsetDfFcn=SubsetDfFcn,
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
+F = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
+                    seqCountCol='seq_count', SubsetDfFcn=None, sepStr='>')
+G = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
+                    seqCountCol='seq_count', SubsetDfFcn=SubsetDfFcn,
                     sepStr='>')
-#Mark(seqDf[['sequence', 'sequence_count']])
+#Mark(seqDf[['seq', 'seq_count']])
 def H(pair):
   print([F(pair[0] + '>' + pair[1]), G(pair[0] + '>' + pair[1])])
 
-H(['randomPhotoApp', 'randomBrowseApp'])
-H(['randomBrowseApp', 'randomPhotoApp'])
-H(['randomDocApp', 'randomWatchApp'])
+H(['photoFeat', browsingFeat])
+H([browsingFeat, 'photoFeat'])
+H(['editingFeat', 'randomWatchApp'])
 bsSize = 10
 Fcn = SeqTransOddsFcn
 
-out1 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=Fcn, seqCountCol=None,
+out1 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=Fcn, seqCountCol=None,
   SubsetDfFcn=None, shift=True, trim=2, sepStr='>', bsSize=bsSize,
                     valueColName='value', seqLengthMin=2)
-out2 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=Fcn, seqCountCol=None,
+out2 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=Fcn, seqCountCol=None,
                     SubsetDfFcn=SubsetDfFcn, shift=True, trim=2, sepStr='>',
                     bsSize=bsSize, valueColName='value', seqLengthMin=2)
-compareDf = pd.merge(out1, out2, on=['sequence'], how='outer')
+compareDf = pd.merge(out1, out2, on=['seq'], how='outer')
 plt.scatter(compareDf['value_x'], compareDf['value_y'])
 
 
@@ -815,14 +815,14 @@ setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
 
-SubsetDfFcn0 = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod',
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
                                      indCols=['user_id'])
 
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 
-basket = ['randomBrowseApp', 'randomWatchApp', 'randomSheetApp', 'randomDocApp']
+basket = [browsingFeat, 'randomWatchApp', 'exploreFeat', 'editingFeat']
 Mark(AddMembershipCol(basket))
 Mark(SubsetDfFcn0(basket)(df)['user_id'].value_counts())
 
@@ -830,29 +830,29 @@ seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
                                timeCol='time', timeGap=2*60, trim=None,
                                keepIndCols=True, ordered=False)
 
-seqDf = ShiftedSeqDf(df=seqDf, seqCol='sequence', k=4, sepStr='>')
+seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=4, sepStr='>')
 
-F = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                   seqCountCol='sequence_count', SubsetDfFcn=None, sepStr='>')
-G = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='sequence',
-                   seqCountCol='sequence_count', SubsetDfFcn=SubsetDfFcn,
+F = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='seq',
+                   seqCountCol='seq_count', SubsetDfFcn=None, sepStr='>')
+G = SeqQuadOddsFcn(df=seqDf.copy(), seqCol='seq',
+                   seqCountCol='seq_count', SubsetDfFcn=SubsetDfFcn,
                    sepStr='>')
-#Mark(seqDf[['sequence', 'sequence_count']])
+#Mark(seqDf[['seq', 'seq_count']])
 def H(x):
   print(x)
   print([F(x), G(x)])
 
-H('randomDocApp>randomPhotoApp>randomDocApp>randomPhotoApp')
-H('randomBrowseApp>randomPhotoApp>randomBrowseApp>randomPhotoApp')
-H('randomDocApp>randomWatchApp>randomDocApp>randomWatchApp')
-H('randomWatchApp>randomDocApp>randomWatchApp>randomDocApp')
-H('randomDocApp>randomEmailApp>randomLocApp>randomBrowseApp_IMAGES')
-H('randomWatchApp_MUSIC>randomPresoApp>randomWatchApp_MUSIC>SIGN_IN')
-H('randomWatchApp>randomBrowseApp_IMAGES>randomPresoApp>randomWatchApp_MUSIC')
-H('randomPresoApp>randomBrowseApp_IMAGES>randomPresoApp>randomSheetApp')
+H('editingFeat>photoFeat>editingFeat>photoFeat')
+H('browsingFeat>photoFeat>browsingFeat>photoFeat')
+H('editingFeat>randomWatchApp>editingFeat>randomWatchApp')
+H('randomWatchApp>editingFeat>randomWatchApp>editingFeat')
+H('editingFeat>mailingFeat>locFeat>browsingFeat_IMAGES')
+H('randomWatchApp_MUSIC>PresFeat>randomWatchApp_MUSIC>SIGN_IN')
+H('randomWatchApp>browsingFeat_IMAGES>PresFeat>randomWatchApp_MUSIC')
+H('PresFeat>browsingFeat_IMAGES>PresFeat>exploreFeat')
 
-seqDf2 = seqDf[seqDf['sequence'].apply(lambda x: x.count('>')) == 3]
-obsSeq = list(set(seqDf['sequence'].values))
+seqDf2 = seqDf[seqDf['seq'].apply(lambda x: x.count('>')) == 3]
+obsSeq = list(set(seqDf['seq'].values))
 obsSeq
 
 H(obsSeq[0])
@@ -861,14 +861,14 @@ H(obsSeq[1])
 
 bsSize = 10
 Fcn = SeqQuadOddsFcn
-out1 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=Fcn, seqCountCol=None,
+out1 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=Fcn, seqCountCol=None,
                     SubsetDfFcn=None, shift=True, trim=4, sepStr='>',
                     bsSize=bsSize, valueColName='value', seqLengthMin=4)
 
-out2 = SeqConfIntDf(df=seqDf, seqCol='sequence', Fcn=Fcn, seqCountCol=None,
+out2 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=Fcn, seqCountCol=None,
                     SubsetDfFcn=SubsetDfFcn, shift=True, trim=4, sepStr='>',
                     bsSize=bsSize, valueColName='value', seqLengthMin=4)
-compareDf = pd.merge(out1, out2, on=['sequence'], how='outer')
+compareDf = pd.merge(out1, out2, on=['seq'], how='outer')
 plt.scatter(compareDf['value_x'], compareDf['value_y'])
 
 sigDf = SeqSigValueDf(df=df, timeCol='time', timeGap=2*60, seqDimCols=['prod'],

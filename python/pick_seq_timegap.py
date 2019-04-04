@@ -28,25 +28,26 @@ with the same "products" or varying products
 # timeCol is the column with the time stamp
 # unitCol is the partitioning column: e.g. user_id
 
-def TimeGapDistbn(df, respCol, timeCol, unitCol, minGap, minSliceSs):
+def TimeGapDistbn(
+   df, respCol, timeCol, unitCol, minGap, minSliceSs, sep=" > "):
 
   df['delta'] = (df[timeCol] - df[timeCol].shift()).fillna(0)
   df['delta_sec'] = df['delta'].values / np.timedelta64(1, 's')
   df['pair'] = (df[respCol] + '---' + df[respCol].shift()).fillna('')
-  df = df.assign(**{'pair': df['pair'].str.split('---')})
+  df['pair'] = df['pair'].str.split('---')
   df['pair'] = df['pair'].map(lambda x: list(set(x)))
   df[unitCol + '_switch'] = (
       df[unitCol] + '---' + df[unitCol].shift()).fillna('')
-  df = df.assign(
-      **{unitCol + '_switch': df[unitCol + '_switch'].str.split('---')})
+  df[unitCol + '_switch'] =df[unitCol + '_switch'].str.split('---')
   df[unitCol + '_switch'] = df[unitCol + '_switch'].map(lambda x: list(set(x)))
   df = df[df[unitCol + '_switch'].map(len) < 2]
   df = df[df['delta_sec'] < minGap]
   indSame = df['pair'].map(len) < 2
   indSwitch = df['pair'].map(len) >= 2
-  df['usage'] = df['pair'].map(lambda x: '-'.join(x))
+  df['usage'] = df['pair'].map(lambda x: sep.join(x))
 
   def PlotandAgg(df0, pltTitle=''):
+
     df0['delta_sec'] = df0['delta_sec'] + 0.2
     g = df0.groupby(['usage'])['usage']
     tab = g.agg(len)
@@ -63,7 +64,7 @@ def TimeGapDistbn(df, respCol, timeCol, unitCol, minGap, minSliceSs):
     plt.axhline(y=0, hold=None, alpha=0.2)
     plt.title(pltTitle)
     locs, labels = plt.xticks()
-    plt.setp(labels, rotation=45)
+    plt.setp(labels, rotation=90)
     g = df1.groupby(['usage'], as_index=False)
     dfAgg = g.agg({
       'delta_sec': {
@@ -77,8 +78,10 @@ def TimeGapDistbn(df, respCol, timeCol, unitCol, minGap, minSliceSs):
     })
 
     dfAgg.columns = [''.join(col).strip() for col in dfAgg.columns.values]
-    cols = ['usage'
-           ] + list('delta_sec' + pd.Series(['Q5', 'Q25', 'Q50', 'Q75', 'Q95']))
+    cols = (
+        ['usage']
+        + list('delta_sec' + pd.Series(['Q5', 'Q25', 'Q50', 'Q75', 'Q95'])))
+
     out = dfAgg[cols]
     return {'df': df1, 'dfAgg': dfAgg}
 

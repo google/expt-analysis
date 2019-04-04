@@ -15,14 +15,6 @@
 
 # author: Reza Hosseini
 
-
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
-
 ## color functions with transparency
 ColAlpha = function(colors, alpha=0.5) {
 

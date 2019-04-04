@@ -17,18 +17,12 @@
 
 ## functions to assess rater consistency
 
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
-
-library('psych')
-library('irr')
+##### PART I
+#library('psych')
+#library('irr')
 
 ## creating data for the irr package
-CreateConsDataIrr = function(data, unitCol, raterCol, resp) {
+Create_consDataIrr = function(data, unitCol, raterCol, resp) {
 
 	library('reshape')
 	data2 = data[ , c(unitCol, raterCol, resp)]
@@ -193,7 +187,7 @@ GetConsistencyMetrics = function(
 		  data, unitCol='unit', raterCol='rater', resp='resp')
 	#dim(consData)
 
-	consDataIrr = CreateConsDataIrr(
+	consDataIrr = Create_consDataIrr(
 		  data=data, unitCol=unitCol, raterCol=raterCol, resp=resp)
 
 	irr = irr::kripp.alpha(t(as.matrix(consDataIrr)), method='interval')[['value']]
@@ -833,4 +827,100 @@ PlotHistScat = function(
 	mainText=paste(extraText, 'Hist of rater cons in for ', respName, sep='')
 	PlotHist(consDf, odir=odir, mainText, save=save)
 	print(mainText)
+}
+
+
+
+#### PART II
+# This is a function to calculate Util
+# u is a vector of values between 0 and 1
+# missing is replaced by 0.2/4
+Util = function(u, at, naReplace=(0.2/4)) {
+
+	if (length(u) < at) {
+      v = rep(naReplace, (at-length(u)))
+      u = c(u, v)
+  }
+   u2 = u^2
+   w = 1 / (1:at)
+   out = sqrt(sum(u2*w) / sum(w))
+   return(out)
+}
+
+Util5 = function(u) {
+	Util(u, at=5)
+}
+
+Util10 = function(u) {
+	Util(u, at=10)
+}
+
+Example = function()  {
+	u = c(1, 1, 1)
+	at = 5
+	Util(u, at)
+}
+
+## Calculate maximum of the diff
+# the maximum possible difference
+# between Util5 and Util10
+Example = function() {
+
+	UtilDiff = function(x, y, b=sum(1/(1:5)), d=sum(1/(6:10))) {
+		abs(sqrt(x / b) - sqrt((x + y) / (b + d)))
+	}
+
+	b = sum(1/(1:5))
+	d = sum(1/(6:10))
+
+	MakeImagePlot = function(b0, d0, text) {
+		n = 1000
+		xVec = seq(0, b0, b0/n)
+		yVec = seq(0, d0, d0/n)
+		xyGrid = expand.grid(xVec,yVec)
+
+		gGrid = UtilDiff(xyGrid[ , 1], xyGrid[ , 2])
+		m1 = max(gGrid)
+		m2 = min(gGrid)
+
+		mainText = paste(text, ', ', 'max=', signif(m1, 2), sep='')
+
+		gMat = matrix(gGrid, length(xVec), length(yVec))
+		image(
+		  	xVec, yVec, gMat, col=topo.colors(100, alpha=1), main=mainText,
+			  xlim=c(-0.1, b+0.1), ylim=c(-0.1, d+0.1), zlim=c(0, 0.5),
+			  xlab='x', ylab='y')
+		contour(xVec, yVec, gMat, add=TRUE, col="black", labcex=1, lwd=2)
+		return(m1)
+	}
+
+	b1 = sum((1/(1:5))*c(1, (3/4)^2, (3/4)^2, (3/4)^2, (3/4)^2))
+	d1 = sum((1/(6:10))*c(1, (3/4)^2, (3/4)^2, (3/4)^2, (3/4)^2))
+
+
+	library('Cairo')
+
+	fn = paste(ofigs, 'max_diff.png', sep='')
+	Cairo(file=fn, type='png')
+	#png(fn)
+	par(mfrow=c(1, 2), pty="s")
+	MakeImagePlot(b, d, text='stdrd Util')
+	MakeImagePlot(b1, d1, text='non-strd Util')
+	dev.off()
+
+	fn1 = paste(ofigs,'max_diff1.png',sep='')
+	fn2 = paste(ofigs,'max_diff2.png',sep='')
+	#Cairo(file=fn,type='png')
+	#png(fn)
+
+	Cairo(file=fn1, type='png')
+	MakeImagePlot(b, d, text='stdrd Util')
+	dev.off()
+
+	Cairo(file=fn2, type='png')
+	MakeImagePlot(b1, d1, text='non-strd Util')
+	dev.off()
+
+	rm(fn1)
+	rm(fn2)
 }

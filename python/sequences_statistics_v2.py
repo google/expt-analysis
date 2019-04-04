@@ -21,13 +21,13 @@ we develop a method in which first
 we calculate summable metrics for sequential data
 the summable data will be augmented with appropriate totals
 which are also summable
-for example a seqCol can be randomEmailApp-comp > randomEmailApp-phone > search-phone
+for example a seqCol can be mailingFeat-comp > mailingFeat-phone > search-phone
 Assume we want to be able to slice by sliceCols=[country, date]
 we also like to keep some seqPropCols
 (columns which keep track of the sequence property) of interest around
 for example seqPropCols=[form_factor_mix]
 which tells us if there was an an interface (comp/pc) change in the seq
-then consider the data   country, date, device, sequence, count,
+then consider the data country, date, device, sequence, count,
 event_1st, event_2nd, event_3rd, event_4th
 the input seqDecompCols =
 [event_1st=a1, event_2nd=a2, event_3rd=a3, event_4th=a4]
@@ -63,6 +63,8 @@ def CreateSeqTab_addEventCombin(
     timeCol,
     trim,
     countDistinctCols,
+    seqCol="trimmed_seq_deduped",
+    noShifted=False,
     timeColEnd=None,
     addSeqPropMixedCols=False,
     ordered=True,
@@ -84,9 +86,10 @@ def CreateSeqTab_addEventCombin(
     " therefore calculated prob are unreliable")
   '''
 
-  if (not set(seqPropCols) <= set(seqDimCols)):
+  if not set(seqPropCols) <= set(seqDimCols):
     warnings.warn(
-        "\n *** WARNING: seqPropCols should be typically a subset of seqDimCols." +
+        "\n *** WARNING: seqPropCols should be" +
+        "typically a subset of seqDimCols." +
         " If this is not the case, make sure seqDimCols determines" +
         " seqPropCols uniquely. \n")
 
@@ -101,20 +104,39 @@ def CreateSeqTab_addEventCombin(
       extraCols=extraCols,
       ordered=ordered)
 
+  if noShifted:
+    seqDf = seqDf[seqDf["seq_shift_order"].map(str) == "0"]
+
+  print(seqDf.columns)
+
   eventCols = ['event_1', 'event_2', 'event_3', 'event_4'][:trim]
-  seqDf['sequence'] = seqDf['event_1']
+
+  # if seqCol is the standard column, the seq is simply
+  # the concat of the events
+  # otherwise we need to extract the events again
+  if seqCol != "trimmed_seq_deduped":
+    for col in ['event_1', 'event_2', 'event_3', 'event_4']:
+      del seqDf[col]
+    seqDf = AddSeqOrdEvent(
+        df=seqDf.copy(),
+        seqCol=seqCol,
+        sepStr='>',
+        noneValue='BLANK')
+
+  seqDf['seq'] = seqDf['event_1']
   for i in range(1, trim):
-    seqDf['sequence'] = seqDf['sequence'] + '>' + seqDf[eventCols[i]]
+    seqDf['seq'] = seqDf['seq'] + '>' + seqDf[eventCols[i]]
 
   ## adding the seq property, mixture columns
-  if (addSeqPropMixedCols and len(seqPropCols) > 0):
+  if addSeqPropMixedCols and len(seqPropCols) > 0:
     seqPropCols_mix = ['trimmed_' + x + '_parallel_mix' for x in seqPropCols]
     seqPropCols = (
         ['trimmed_' + x + '_parallel' for x in seqPropCols]
         + seqPropCols_mix)
 
   ## we only need to keep unique combinations involving countDistinctCols
-  keepCols = countDistinctCols + sliceCols + seqPropCols + eventCols + ['sequence']
+  keepCols = (
+      countDistinctCols + sliceCols + seqPropCols + eventCols + ['seq'])
   seqDf = seqDf[keepCols].copy()
   seqDf  = seqDf.drop_duplicates()
 
@@ -134,8 +156,8 @@ def CreateSeqTab_addEventCombin(
       seqDf=seqDf,
       sliceCols=sliceCols,
       seqPropCols=seqPropCols,
-      seqCol='sequence',
-      seqCountCol='sequence_count',
+      seqCol='seq',
+      seqCountCol='seq_count',
       seqLenCol='seq_length')
   '''
   print(seqDf[:5])
@@ -173,9 +195,11 @@ out = CreateSeqTab_addEventCombin(
 
 ## takes a seq data frame, and calculates counts wrt an index
 # it calculate the metrics per slice given in indCols
-# therefore one can aggregate further if needed (and if summable i.e. no index overlap in slices)
+# therefore one can aggregate further if needed
+# (and if summable i.e. no index overlap in slices)
 # sliceCols are the columns for which the totals are calculated over them:
-# examples for sliceCols: country, local_time_range for apps, second one is seqPropCol typically
+# examples for sliceCols:
+# country, local_time_range for apps, second one is seqPropCol typically
 # auxSliceCols are not considered when adding totals: example party_mix for apps
 # therefore the seqCol should determine the auxSliceCol values (uniquely)
 def CalcSeqCountWrtId(
@@ -183,7 +207,7 @@ def CalcSeqCountWrtId(
     trim,
     sliceCols=[],
     auxSliceCols=[],
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols=['seq_id']):
 
   for col in auxSliceCols:
@@ -196,7 +220,7 @@ def CalcSeqCountWrtId(
     if (len(set(seqDf[seqCol].values)) != len(df0)):
       warnings.warn(col + " is not determined uniquely by seqCol (seqDimCols).")
 
-  seqDf = ConcatColsStr(
+  seqDf = Concat_stringColsDf(
       df=seqDf, cols=countDistinctCols, colName='distinct_id', sepStr='-')
 
   seqDecompCols = ['event_1', 'event_2', 'event_3', 'event_4'][:trim]
@@ -265,14 +289,14 @@ seqDf = CreateSeqTab_addEventCombin(
     fn=None,
     writePath='')
 
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 seqCountDf = CalcSeqCountWrtId(
     seqDf=seqDf,
     trim=3,
     sliceCols=['date'],
     auxSliceCols=map(lambda x: x + '_parallel', ['form_factor']) + ['seq_len'],
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols = ['seq_id'])
 '''
 
@@ -290,12 +314,12 @@ def AddSeqProbCiMetrics(
     addCounts=True,
     sliceCols=[],
     auxSliceCols=[],
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols=['seq_id'],
     seqCountMin=10):
 
   ## we add count cols if the data is not count data already
-  if (addCounts):
+  if addCounts:
     df = CalcSeqCountWrtId(
         seqDf,
         trim=trim,
@@ -320,7 +344,7 @@ def AddSeqProbCiMetrics(
   df['prob_prod'] = 1
   df[seqCol + '_prob'] = (1.0 * df[seqCol + '_count' + '_agg'] /
                           df['count_slice_total'])
-  ## calculate var probilities and variances
+  ## calculate var probabilities and variances
   ## the total variance is also calculated since its the sum of all
   for valueCol0 in valueCols_prefix:
     x = (1.0 * df[valueCol0 + '_count' + '_agg'] /
@@ -408,13 +432,13 @@ def AddSeqProbCiMetrics(
   # we use a conservative estimate of the variance p(1-p)
   # we use p=1/2
   df['prob_var'] = (
-      (1.0*df['sequence_prob']*(1-df['sequence_prob']) / df['count_slice_total']))
+      (1.0*df['seq_prob']*(1-df['seq_prob']) / df['count_slice_total']))
       #+ 1.0/(16.0*df['count_slice_total']))
-  df['sequence_prob_upper'] = (
-      df['sequence_prob'] +
+  df['seq_prob_upper'] = (
+      df['seq_prob'] +
       1.96 *(df['prob_var']).map(math.sqrt)).map(lambda x: min(x, 1.0))
-  df['sequence_prob_lower'] = (
-      df['sequence_prob'] -
+  df['seq_prob_lower'] = (
+      df['seq_prob'] -
       1.96 * (df['prob_var']).map(math.sqrt)).map(lambda x: max(x, 0.0))
 
   return df
@@ -439,14 +463,14 @@ seqDf = CreateSeqTab_addEventCombin(
     fn=None,
     writePath='')
 
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 seqCountDf = CalcSeqCountWrtId(
     seqDf=seqDf,
     trim=3,
     sliceCols=['date'],
     auxSliceCols=map(lambda x: x + '_parallel', ['form_factor']) + ['seq_len'],
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols = ['seq_id'])
 
 seqDfWithSignif = AddSeqProbCiMetrics(
@@ -454,7 +478,7 @@ seqDfWithSignif = AddSeqProbCiMetrics(
     trim=3,
     sliceCols=[],
     auxSliceCols=[],
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols=['seq_id'])
 
 Mark(seqCountDf.sort_values(['count'], ascending=[0])[:5])
@@ -482,7 +506,7 @@ seqDf = CreateSeqTab_addEventCombin(
     fn=None,
     writePath='')
 
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 #auxSliceCols = (
 #    map(lambda x: 'trimmed_' + x + '_parallel', seqPropCols) +
@@ -508,7 +532,7 @@ seqDfWithSignif = AddSeqProbCiMetrics(
     trim=trim,
     sliceCols=sliceCols,
     auxSliceCols=auxSliceCols,
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols=['user_id'],
     seqCountMin=5)
 
@@ -537,13 +561,14 @@ SlicePlotSigSeq(
 # sliceColsAgg would not have counted the same countWrtId
 # therefore by aggregating (summing counts) further to
 # sliceColsAgg the counts are valid
-def CalcProbMetrics_fromSummable(seqCountDf,
-                                 sliceColsAgg,
-                                 trim,
-                                 auxSliceCols=[],
-                                 seqCountMin=10,
-                                 removeBlankSeqs=True,
-                                 addSeqPropMixedCols=False):
+def CalcProbMetrics_fromSummable(
+    seqCountDf,
+    sliceColsAgg,
+    trim,
+    auxSliceCols=[],
+    seqCountMin=10,
+    removeBlankSeqs=True,
+    addSeqPropMixedCols=False):
 
   seqDecompCols = ['event_1', 'event_2', 'event_3', 'event_4'][:trim]
   eventCombinCols = []
@@ -556,9 +581,9 @@ def CalcProbMetrics_fromSummable(seqCountDf,
       ['count'] +
       [x + '_count_agg' for x in seqDecompCols] +
       [x + '_count_agg' for x in eventCombinCols] +
-      ['count_slice_total','sequence_count_agg'])
+      ['count_slice_total','seq_count_agg'])
 
-  mainIndCols = ['sequence'] + seqDecompCols
+  mainIndCols = ['seq'] + seqDecompCols
 
   seqDfWithTotals2 = seqCountDf[
       mainIndCols + auxSliceCols + sliceColsAgg + valueCols]
@@ -571,8 +596,7 @@ def CalcProbMetrics_fromSummable(seqCountDf,
       trim=trim,
       addCounts=False,
       seqCountMin=seqCountMin)
-  #Mark(seqDfWithSignif[:5])
-  seqDfWithSignif = seqDfWithSignif.sort_values(['sequence'] + sliceColsAgg)
+  seqDfWithSignif = seqDfWithSignif.sort_values(['seq'] + sliceColsAgg)
 
   return seqDfWithSignif
 
@@ -596,7 +620,7 @@ seqDf = CreateSeqTab_addEventCombin(
     fn=None,
     writePath='')
 
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 auxSliceCols = (
     map(lambda x: 'trimmed_' + x + '_parallel', seqPropCols) +
@@ -608,7 +632,7 @@ seqCountDf = CalcSeqCountWrtId(
     trim=trim,
     sliceCols=['date', 'country'],
     auxSliceCols=auxSliceCols,
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols = ['seq_id'])
 
 ## indirect method: step 1
@@ -617,7 +641,7 @@ seqDfWithSignif1 = AddSeqProbCiMetrics(
     trim=trim,
     sliceCols=['date', 'country'],
     auxSliceCols=auxSliceCols,
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols=['seq_id'],
     seqCountMin=5)
 
@@ -699,8 +723,10 @@ def FindSigSeq_withPenet(
       sliceCols=sliceCols,
       usageCols=usageCols)
 
-  seqDfWithSignif2 = pd.merge(seqDfWithSignif, penetDf, on=sliceCols + usageCols)
-  return(seqDfWithSignif2)
+  seqDfWithSignif2 = pd.merge(
+      seqDfWithSignif, penetDf, on=sliceCols + usageCols)
+
+  return seqDfWithSignif2
 
 '''
 
@@ -723,7 +749,7 @@ seqDf = CreateSeqTab_addEventCombin(
     fn=None,
     writePath='')
 
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 #auxSliceCols = (
 #    map(lambda x: 'trimmed_' + x + '_parallel', seqPropCols) +
@@ -742,13 +768,13 @@ auxSliceCols = [
     #'trimmed_form_factor_parallel',
     #'trimmed_form_factor_parallel_mix']
 
-seqCol = 'sequence'
+seqCol = 'seq'
 countDistinctCols = ['user_id']
 
 seqDfWithSignif2 = FindSigSeq_withPenet(
     seqDf=seqDf,
     trim=trim,
-    seqCol='sequence',
+    seqCol='seq',
     sliceCols=sliceCols,
     auxSliceCols=auxSliceCols,
     countDistinctCols='seq_id',
@@ -772,19 +798,20 @@ def PlotSigSeq_concatSeqAndSlices(
   df = seqDfWithSignif.sort_values(['count'], ascending=[0])
 
   df = df[
-      ['sequence'] +
+      ['seq'] +
       sliceCols +
       [metricCol, metricColLower, metricColUpper]]
 
-  df = ConcatColsStr(df,
-                     cols=['sequence'] + sliceCols,
+  df = Concat_stringColsDf(df,
+                     cols=['seq'] + sliceCols,
                      colName='seq_slice',
                      sepStr='-')
 
   ## subset the cases where at least one of the methods is sig
   df2 = df[df[metricColLower] > 1.1]
-  if (removeBlankSeqs == True):
-    df2 = df2[df2['sequence'].map(lambda x: 'BLANK' not in x)]
+
+  if removeBlankSeqs:
+    df2 = df2[df2['seq'].map(lambda x: 'BLANK' not in x)]
 
   n = len(df2)
   fig, ax = plt.subplots()
@@ -829,16 +856,17 @@ def SlicePlotSigSeq(
     addPenetPlots=True,
     seqNumLimit=None,
     rotation=0,
+    logScale=True,
     figSize=[5, 20],
     saveFig=False,
     figPath='',
     figFnPrefix='fig',
     figFnExt='png',
-    Open=open):
+    Open=OpenFile):
 
   penetCols = []
-  if (addPenetPlots):
-    penetCols = ['penetration', 'penetration_lower', 'penetration_upper']
+  if addPenetPlots:
+    penetCols = ['penetration', 'penetration_ci_lower', 'penetration_ci_upper']
 
   df = seqDfWithSignif.sort_values(['count'], ascending=[0]).copy()
 
@@ -852,13 +880,13 @@ def SlicePlotSigSeq(
     df = df.reset_index()
 
   df = df[
-      ['sequence'] +
+      ['seq'] +
       sliceCols +
       ['count', metricCol, metricColLower, metricColUpper] +
-      ['sequence_prob', 'sequence_prob_upper', 'sequence_prob_lower'] +
+      ['seq_prob', 'seq_prob_upper', 'seq_prob_lower'] +
       penetCols]
 
-  df = ConcatColsStr(
+  df = Concat_stringColsDf(
       df=df,
       cols=sliceCols,
       colName='slice_comb',
@@ -868,23 +896,25 @@ def SlicePlotSigSeq(
   ## subset the cases where at least one of the methods is sig
   df2 = df[df[metricColLower] > relativeProbLowerLim]
   if removeBlankSeqs:
-    df2 = df2[df2['sequence'].map(lambda x: 'BLANK' not in x)]
+    df2 = df2[df2['seq'].map(lambda x: 'BLANK' not in x)]
   df2 = df2.reset_index(drop=True)
+
   if len(df2) == 0:
     print('\n\n *** No data satisfied the conditions,' +
           'functions returns \n\n')
     return None
+
   df2 = df2.sort_values([orderByCol], ascending=[1])
   if seqNumLimit != None:
     df2 = df2[:seqNumLimit]
-  #plt.figure()
+
   plotDict = {}
   p1 = PlotCIWrt(
       df=df2.copy(),
       colUpper=metricColUpper,
       colLower=metricColLower,
       sliceCols=['slice_comb'],
-      labelCol='sequence',
+      labelCol='seq',
       col=metricCol,
       ciHeight=0.5,
       rotation=0,
@@ -895,38 +925,40 @@ def SlicePlotSigSeq(
       figSize=figSize)
 
   plotDict['relative_prob'] = p1
-  if (saveFig):
+  if saveFig:
     fn0 = figPath + figFnPrefix + '_relative_prob2.' + figFnExt
     fn = Open(fn0, 'w')
     p1.savefig(fn, bbox_inches='tight')
 
   #plt.figure()
   df = df2.copy()
-  for col in ['sequence_prob', 'sequence_prob_upper',
-              'sequence_prob_lower']:
+  for col in ['seq_prob', 'seq_prob_upper',
+              'seq_prob_lower']:
     df[col] = 100.0 * df[col]
-  max0 = df['sequence_prob_upper'].max() * 1.5
-  min0 = df['sequence_prob_lower'].min() / 5.0
-  addVerLines = [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]
+  max0 = df['seq_prob_upper'].max() * 1.5
+  min0 = df['seq_prob_lower'].min() / 5.0
+  addVerLines = [
+      0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]
   addVerLines = [u for u in addVerLines if u <= max0]
   addVerLines = [u for u in addVerLines if u >= min0]
 
   p2 = PlotCIWrt(
       df=df.copy(),
-      colUpper='sequence_prob_upper',
-      colLower='sequence_prob_lower',
+      colUpper='seq_prob_upper',
+      colLower='seq_prob_lower',
       sliceCols=['slice_comb'],
-      labelCol='sequence',
-      col='sequence_prob',
+      labelCol='seq',
+      col='seq_prob',
       ciHeight=0.5,
       rotation=0,
       addVerLines=addVerLines,
-      logScale=True,
+      logScale=logScale,
       lowerLim=-0.1,
       pltTitle='prob (%)',
       figSize=figSize)
 
   plotDict['seq_prob'] = p2
+
   if saveFig:
     fn0 = figPath + figFnPrefix + '_seq_probability.' + figFnExt
     fn = FigFnTransFcn(fn0, 'w')
@@ -935,29 +967,30 @@ def SlicePlotSigSeq(
   df = df2.copy()
 
   if addPenetPlots:
-    for col in ['penetration', 'penetration_upper',
-                'penetration_lower']:
+    for col in ['penetration', 'penetration_ci_upper',
+                'penetration_ci_lower']:
       df[col] = 100.0 * df[col]
     #m1 = (df['penetration_upper'].max() / 5).round()
     #m2 = max([1, m1]) + 2
     #addVerLines = [0.01, 0.1, 1, 2, m2/2.0, m2]
-    max0 = df['penetration_upper'].max() * 1.5
-    min0 = df['penetration_lower'].min() / 5.0
-    addVerLines = [0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]
+    max0 = df['penetration_ci_upper'].max() * 1.5
+    min0 = df['penetration_ci_lower'].min() / 5.0
+    addVerLines = [
+        0.001, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]
     addVerLines = [u for u in addVerLines if u <= max0]
     addVerLines = [u for u in addVerLines if u >= min0]
 
     p3 = PlotCIWrt(
         df=df.copy(),
-        colUpper='penetration_upper',
-        colLower='penetration_lower',
+        colUpper='penetration_ci_upper',
+        colLower='penetration_ci_lower',
         sliceCols=['slice_comb'],
-        labelCol='sequence',
+        labelCol='seq',
         col='penetration',
         ciHeight=0.5,
         rotation=0,
         addVerLines=addVerLines,
-        logScale=True,
+        logScale=logScale,
         lowerLim=-0.1,
         pltTitle='penetration (%)',
         figSize=figSize)
@@ -994,14 +1027,14 @@ seqDf = CreateSeqTab_addEventCombin(
     fn=None,
     writePath='')
 
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 seqCountDf = CalcSeqCountWrtId(
     seqDf=seqDf,
     trim=trim,
     sliceCols=['date', 'country'],
     auxSliceCols=map(lambda x: x + '_parallel', ['form_factor']) + ['seq_len'],
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols = ['seq_id'])
 
 seqPropCols = ['form_factor']
@@ -1017,7 +1050,7 @@ seqDfWithSignif1 = AddSeqProbCiMetrics(
     trim=trim,
     sliceCols=['date', 'country'],
     auxSliceCols=map(lambda x: x + '_parallel', ['form_factor']),
-    seqCol='sequence',
+    seqCol='seq',
     countDistinctCols=['seq_id'],
     seqCountMin=5)
 
@@ -1088,7 +1121,7 @@ seqDf = CreateSeqTab_addEventCombin(
     writePath='')
 
 ## calc sig and penetration
-seqDf['seq_len'] = seqDf['sequence'].map(lambda x: len(x.split('>')))
+seqDf['seq_len'] = seqDf['seq'].map(lambda x: len(x.split('>')))
 
 #auxSliceCols = (
 #    map(lambda x: 'trimmed_' + x + '_parallel', seqPropCols) +
@@ -1107,13 +1140,13 @@ auxSliceCols = [
     #'trimmed_form_factor_parallel',
     #'trimmed_form_factor_parallel_mix']
 
-seqCol = 'sequence'
+seqCol = 'seq'
 countDistinctCols = ['user_id']
 
 seqDfWithSignif2 = FindSigSeq_withPenet(
     seqDf=seqDf,
     trim=trim,
-    seqCol='sequence',
+    seqCol='seq',
     sliceCols=sliceCols,
     auxSliceCols=auxSliceCols,
     countDistinctCols=countDistinctCols,
@@ -1135,3 +1168,223 @@ out = SlicePlotSigSeq(
     figSize=[5, 20])
 
 '''
+
+### end-to-end significant sequence table, and results
+
+## this needs to be implemented depending on the sql lang you use
+def DefineSqlTable_fromFile(fn, sqlTableName, fnSuff, filePath):
+  """query to define a permanent table"""
+  fileName = filePath + fn + fnSuff
+  if fnSuff == ".csv":
+    sqlStr = "<DefineSqlTable_fromFile needs to be implemented>" + fileName
+
+  return sqlStr
+
+def ExecSqlQuery(query):
+  print("<ExecSqlQuery needs to be implemented>")
+  return None
+
+
+## creates appropriate filename for writing result
+# also creates sql table name
+# and the sql string for defining the same table name
+def Gen_seqData_FnTableNames(
+    dataNamesList,
+    dataDesc,
+    trim,
+    timeGapDict,
+    seqCol,
+    writePath,
+    DefineSqlTable_fromFile,
+    condDict=None,
+    fnSuff='.csv',
+    sqlTablePrefix=""):
+
+  timeGapStr = str(timeGapDict['value']) + timeGapDict['scale']
+
+  condString = DictOfListsToString(
+      condDict, dictElemSepr='_', listElemSepr='_')
+  dataString = '_'.join(dataNamesList)
+  fn = dataString
+  sqlTableName = sqlTablePrefix + '.' + dataString
+
+  if dataDesc != '':
+    fn = fn + '_' + dataDesc
+    sqlTableName = sqlTableName + '.' + dataDesc
+
+  if seqCol != '':
+    fn = fn + '_' + seqCol
+    sqlTableName = sqlTableName + '.' + seqCol
+
+  if condString != '':
+    fn = fn + '_' + condString
+    sqlTableName = sqlTableName + '.' + condString
+
+  if trim != '':
+    fn = fn + '_' + timeGapStr + '_len' + str(trim)
+    sqlTableName = sqlTableName + '.' + timeGapStr + '_trim' + str(trim)
+
+  sqlStr = DefineSqlTable_fromFile(
+      fn=fn,
+      sqlTableName=sqlTableName,
+      fnSuff=fnSuff,
+      filePath=writePath)
+
+  return {'fn':fn, 'sqlTableName':sqlTableName, 'sqlStr':sqlStr}
+
+## generate filename (fn) and sql table name
+# for the data of interest with given trim
+# and given writePath
+# then it creates the file in appropriate place
+# it also outputs the sql command
+def WriteSeqTable_forSql(
+    df,
+    seqDimCols,
+    indCols0,
+    sliceCols,
+    seqPropCols,
+    timeGapMin,
+    timeCol,
+    timeColEnd,
+    trim,
+    countDistinctCols,
+    condDict,
+    addSeqPropMixedCols,
+    ordered,
+    writePath,
+    dataNamesList,
+    dataDesc,
+    fnSuff,
+    seqCol="trimmed_seq_deduped",
+    noShifted=False,
+    defineSqlTab=False,
+    DefineSqlTable_fromFile=lambda: None,
+    ExecSqlQuery=lambda: None,
+    sqlTablePrefix="",
+    timeGapDict=None,
+    writeTableLogFn=None):
+
+  if timeColEnd is None:
+    timeColEnd = timeCol
+
+  if timeGapDict is None:
+    timeGapDict = {
+        'scale': 'min',
+        'value':timeGapMin,
+        'to_seconds_converter':60}
+  timeGap = timeGapDict['value'] * timeGapDict['to_seconds_converter']
+
+  out = Gen_seqData_FnTableNames(
+      dataNamesList=dataNamesList,
+      dataDesc=dataDesc,
+      trim=trim,
+      timeGapDict=timeGapDict,
+      seqCol=seqCol,
+      condDict=condDict,
+      writePath=writePath,
+      fnSuff=fnSuff,
+      sqlTablePrefix=sqlTablePrefix,
+      DefineSqlTable_fromFile=DefineSqlTable_fromFile)
+
+  fn = out['fn']
+  sqlTableName = out['sqlTableName']
+  sqlStr = out['sqlStr']
+
+  # stage 1
+  seqDf = CreateSeqTab_addEventCombin(
+    df=df,
+    seqDimCols=seqDimCols,
+    indCols0=indCols0,
+    sliceCols=sliceCols,
+    seqPropCols=seqPropCols,
+    timeGap=timeGap,
+    timeCol=timeCol,
+    trim=trim,
+    countDistinctCols=countDistinctCols,
+    seqCol=seqCol,
+    noShifted=noShifted,
+    timeColEnd=timeColEnd,
+    addSeqPropMixedCols=addSeqPropMixedCols,
+    ordered=ordered,
+    fn=fn,
+    writePath=writePath)
+
+  print(seqDf[:2])
+
+  '''
+  seqCountDf = CalcSeqCountWrtId(
+    seqDf=seqDf,
+    trim=trim,
+    sliceCols=sliceCols,
+    seqPropCols=map(lambda x: x + '_parallel', ['form_factor']),
+    seqCol='seq',
+    countDistinctCols=countDistinctCols,
+    seqLenCol=None)
+  '''
+
+  if writeTableLogFn != None:
+    df = pd.DataFrame({
+      'dataNames':[';'.join(dataNamesList)],
+      'dataDesc':[dataDesc],
+      'seqDimCols': [';'.join(seqDimCols)],
+      'countDistinctCols': [';'.join(countDistinctCols)],
+      'seqCol': [seqCol],
+      'noShifted': [noShifted],
+      'condDict':[DictOfListsToString(condDict, noneString='None')],
+      'trim':[trim],
+      'seqPropCols':[';'.join(seqPropCols)],
+      'sliceCols':[';'.join(sliceCols)],
+      'writePath':[writePath],
+      'fileName':[fn],
+      'sqlTableName':[sqlTableName],
+      'sqlStr':[sqlStr]
+      })
+
+    cols = [
+        'dataNames', 'dataDesc', 'seqDimCols', 'countDistinctCols',
+        'seqCol', 'noShifted', 'condDict', 'trim', 'seqPropCols',
+        'sliceCols', 'writePath', 'fileName', 'sqlTableName', 'sqlStr']
+
+    df = df[cols].copy()
+
+    if FileExists(writeTableLogFn):
+      df0 = ReadCsv(fn=writeTableLogFn)
+      df = df.append(df0)
+
+    df = df[cols].copy()
+
+    Mark(
+        df,
+        text='updated built sql tables names for finding sig sequences',
+        color='purple',
+        bold=True)
+
+    df = df.drop_duplicates()
+    Mark(list(df.columns), 'after append')
+    df = df.sort_values(['fileName'])
+
+    WriteCsv(fn=writeTableLogFn, df=df, sep=',', append=False)
+
+  if defineSqlTab:
+    Mark(sqlStr, '\n this sql table was defined/updated on the fly \n')
+    ExecSqlQuery(query=sqlStr)
+  return {
+      'fn':fn, 'sqlTableName':sqlTableName, 'sqlStr':sqlStr, 'seqDf':seqDf}
+
+## write sig seq results to appropriate place
+def WriteSigSeqDf(sigDf, sqlTableName, path, regDict, condDict):
+
+  for col in ['level_0',  'index']:
+    if col in sigDf.columns:
+      del sigDf[col]
+  fn0 = sqlTableName.replace('.', '_') + '_significant_seq'
+  if len(regDict) > 0:
+    fn0 = fn0 + '_regex_' + DictOfListsToString(regDict)
+  if len(condDict) > 0:
+    fn0 = fn0 + '_cond_' + DictOfListsToString(condDict)
+  fn = path + fn0 + '.csv'
+
+  sigDf['seq'] = sigDf['seq'].map(lambda x: x.replace('>', ' > '))
+  sigDf = sigDf.sort_values(by=['seq', 'slice_comb'])
+
+  WriteCsv(fn=fn, df=sigDf)

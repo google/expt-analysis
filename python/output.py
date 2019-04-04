@@ -15,7 +15,6 @@
 
 # author: Reza Hosseini
 
-
 ## create a directory if it does not exist
 def CreateDir(directory):
   if not os.path.exists(directory):
@@ -75,8 +74,7 @@ def LatexFig(latexFn, figFn, figLabel, figCaption, scale=str(0.5),
         f.write('\\end{figure} \n')
 
 
-############################ Creating figures ###############################
-
+############################ Creating figures ################
 def Pdff(fn, PlotFcn, plotTitle):
 
   with PdfPages(fn) as pdf:
@@ -110,75 +108,91 @@ LatexFig(fn,'fig1.pdf','figLabel','mofo')'''
 ### save fig and add to input latex file
 def SaveFig_addLatex(figCaption, latexFn, ofigs, figFn='', format='png',
                      dpi=100, skipCaption=False, skipLabel=False):
-    import matplotlib
+  import matplotlib
 
-    if figFn == '':
-        figFn=figCaption.replace(' ','_')
-    figFn = ofigs + figFn + '.png'
-    matplotlib.pylab.savefig(figFn, format=format, dpi=dpi)
-    LatexFig(latexFn=latexFn, figFn=figFn, figLabel=figFn,
-             figCaption=figCaption, skipCaption=skipCaption,
-             skipLabel=skipLabel)
+  if figFn == '':
+    figFn=figCaption.replace(' ','_')
+
+  figFn = ofigs + figFn + '.png'
+  matplotlib.pylab.savefig(figFn, format=format, dpi=dpi)
+  LatexFig(latexFn=latexFn, figFn=figFn, figLabel=figFn,
+           figCaption=figCaption, skipCaption=skipCaption,
+           skipLabel=skipLabel)
 
 def SaveFig_addSlide(figCaption, latexFn, ofigs, figFn='', format='png',
                      dpi=100, skipCaption=False, skipLabel=False):
-    import matplotlib
-    if figFn == '':
-        figFn=figCaption.replace(' ','_')
-    figFn = ofigs + figFn + '.png'
-    matplotlib.pylab.savefig(figFn,format=format,dpi=dpi)
-    with open(latexFn, 'a') as f:
-        f.write('\n \\begin{frame} \n')
-        f.write('\n \\frametitle{ \n')
-        f.write(figCaption)
-        f.write('}')
-    LatexFig(latexFn=latexFn, figFn=figFn, figLabel=figFn,
-             figCaption=figCaption, skipCaption=skipCaption,
-             skipLabel=skipLabel)
-    with open(latexFn, 'a') as f:
-        f.write('\n \\end{frame} \n')
+
+  import matplotlib
+  if figFn == '':
+    figFn=figCaption.replace(' ','_')
+  figFn = ofigs + figFn + '.png'
+  matplotlib.pylab.savefig(figFn,format=format,dpi=dpi)
+
+  with open(latexFn, 'a') as f:
+    f.write('\n \\begin{frame} \n')
+    f.write('\n \\frametitle{ \n')
+    f.write(figCaption)
+    f.write('}')
+
+  LatexFig(latexFn=latexFn, figFn=figFn, figLabel=figFn,
+           figCaption=figCaption, skipCaption=skipCaption,
+           skipLabel=skipLabel)
+  with open(latexFn, 'a') as f:
+      f.write('\n \\end{frame} \n')
 
 def Excise(filename, start, end):
-    with open(filename) as infile, open(filename + ".out666", "w") as outfile:
-        for line in infile:
-            if line.strip() == start:
-                print('zereshk')
-                break
-            outfile.write(line)
-        for line in infile:
-            if line.strip() == end:
-                print('albaloo!')
-                break
-        for line in infile:
-            outfile.write(line)
-    os.remove(filename)
-    os.rename(filename + ".out", filename)
+
+  with open(filename) as infile, open(filename + ".out666", "w") as outfile:
+
+    for line in infile:
+      if line.strip() == start:
+        print('zereshk')
+        break
+      outfile.write(line)
+
+    for line in infile:
+      if line.strip() == end:
+        print('albaloo!')
+        break
+    for line in infile:
+      outfile.write(line)
+
+  os.remove(filename)
+  os.rename(filename + ".out", filename)
 
 
 def PltCloseStat(stat=True):
   if stat:
     plt.close()
-  return(None)
+
+  return None
 
 def SaveFigStat(stat=False, figCaption='test caption'):
+
   if stat:
-    SaveFig_addSlide(figCaption=figCaption, latexFn=latexInputFn, ofigs=ofigs,
-                     figFn='', format='png', dpi=200)
-  return(None)
+    SaveFig_addSlide(
+        figCaption=figCaption,
+        latexFn=latexInputFn, ofigs=ofigs,
+        figFn='', format='png', dpi=200)
+
+  return None
 
 ### this function adds a figure with caption and label to a latex file
 def DfLatexTable(df):
-    table = ''
-    n = len(df)
-    colNames = df.columns
-    top = ' & '.join(colNames)
-    table = top + ' \\\\' + '  \n' + '    '
+
+  table = ''
+  n = len(df)
+  colNames = df.columns
+  top = ' & '.join(colNames)
+  table = top + ' \\\\' + '  \n' + '    '
+  table = table + '\hline' + '\n'
+  table = table + '\hline' + '\n'
+  for i in range(n):
+    dfRow = df.iloc[i,:]
+    tableRow = ' & '.join(dfRow)
+    table = table + tableRow + '\\\\' + '\n' + '    '
     table = table + '\hline' + '\n'
-    table = table + '\hline' + '\n'
-    for i in range(n):
-        dfRow = df.iloc[i,:]
-        tableRow = ' & '.join(dfRow)
-        table = table + tableRow + '\\\\' + '\n' + '    '
-        table = table + '\hline' + '\n'
-    table = table + '\hline' + '\n'
-    return(table)
+
+  table = table + '\hline' + '\n'
+
+  return table

@@ -18,8 +18,8 @@
 """ Functions to to generate sequential data from timestamped data
 and work with sequential data
 we allow you to define what dimensions each sequence element contains
-e.g. we can have a one-dimensional sequence of the form: randomBrowseApp>randomEmailApp>randomWatchApp
-or a 3-dim sequence of the form randomBrowseApp-COMP-VIEW>randomEmailApp-PHN-READ
+e.g. we can have a one-dimensional sequence of the form: browsingFeat>mailingFeat>randomWatchApp
+or a 3-dim sequence of the form browsingFeat-COMP-VIEW>mailingFeat-PHN-READ
 this code includes function for augmenting the data by shifting sequences
 this code includes methods to add useful slicing methods to sequences when
 generating them
@@ -39,9 +39,9 @@ def GenUsageData(
     timeGridLen='1min',
     durLimit=None,
     prodsChoice=[
-        'randomBrowseApp', 'randomEmailApp',
-        'randomDocApp', 'randomSheetApp', 'randomPhotoApp',
-        'randomPresoApp', 'randomLocApp', 'randomStorageApp']):
+        'browsingFeat', 'mailingFeat',
+        'editingFeat', 'exploreFeat', 'photoFeat',
+        'PresFeat', 'locFeat', 'StorageFeat']):
 
   timeCol = 'time'
   timeColEnd = 'end_time'
@@ -107,13 +107,13 @@ def GenUsageData_withExpt(
     timeGridLenPair=['2h', '2h'],
     durLimitPair = [3600, 3600],
     prodsChoicePair = [
-        ['randomBrowseApp', 'randomEmailApp', 'randomDocApp',
-         'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp'],
-        ['randomBrowseApp', 'randomEmailApp', 'randomDocApp',
-         'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp', 'randomBrowseApp',
-         'randomDocApp']]):
+        ['browsingFeat', 'mailingFeat', 'editingFeat',
+         'exploreFeat', 'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat'],
+        ['browsingFeat', 'mailingFeat', 'editingFeat',
+         'exploreFeat', 'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat', 'browsingFeat',
+         'editingFeat']]):
 
   dfList = []
   labels = ['base', 'test']
@@ -141,10 +141,12 @@ df = GenUsageData_withExpt(
     timeGridLenPair=['2h', '2h'],
     durLimitPair = [3600, 3000],
     prodsChoicePair = [
-        ['randomBrowseApp', 'randomEmailApp', 'randomDocApp', 'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp'],
-        ['randomBrowseApp', 'randomEmailApp', 'randomDocApp', 'randomSheetApp', 'randomPhotoApp', 'randomPresoApp',
-         'randomLocApp', 'randomStorageApp', 'randomBrowseApp', 'randomDocApp']])
+        ['browsingFeat', 'mailingFeat', 'editingFeat', 'exploreFeat',
+         'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat'],
+        ['browsingFeat', 'mailingFeat', 'editingFeat', 'exploreFeat',
+         'photoFeat', 'PresFeat',
+         'locFeat', 'StorageFeat', 'browsingFeat', 'editingFeat']])
 
 '''
 
@@ -159,8 +161,8 @@ def Sim_depUsageData(userNum=10, subSeqLen=3, repeatPattern=None):
   df['date'] = df['date'].map(str)
 
   ## generate some pattern
-  subSeq = ['randomPhotoApp', 'randomLocApp', 'randomBrowseApp',
-            'randomDocApp', 'randomSheetApp'][:subSeqLen]
+  subSeq = ['photoFeat', 'locFeat', 'browsingFeat',
+            'editingFeat', 'exploreFeat'][:subSeqLen]
   l = subSeqLen + 1
 
   if repeatPattern is None:
@@ -171,9 +173,9 @@ def Sim_depUsageData(userNum=10, subSeqLen=3, repeatPattern=None):
 
   for i in range(repeatPattern):
     x = subSeq + list(np.random.choice(
-        a=['randomBrowseApp', 'randomEmailApp', 'randomDocApp',
-           'randomSheetApp', 'randomPhotoApp',
-           'randomPresoApp', 'randomLocApp'],
+        a=['browsingFeat', 'mailingFeat', 'editingFeat',
+           'exploreFeat', 'photoFeat',
+           'PresFeat', 'locFeat'],
         size=(l-len(subSeq)),
         replace=True))
 
@@ -191,7 +193,7 @@ df = Sim_depUsageData()
 ## it generates a function which for each string s
 ## returns a label in labelList if it is found to be a part of string s "y in s"
 ## but if more than one element is a match then returns MIXED
-def StringContainsMixedFcn(labelList, mixedLabel='MIXED', noneLabel='None'):
+def String_isMixedFcn(labelList, mixedLabel='MIXED', noneLabel='None'):
 
   def F(s):
 
@@ -204,7 +206,7 @@ def StringContainsMixedFcn(labelList, mixedLabel='MIXED', noneLabel='None'):
     if v > 1:
       return mixedLabel
     if v == 1:
-      ind = [i for i, j in enumerate(elemInd) if j==True]
+      ind = [i for i, j in enumerate(elemInd) if j]
       return labelList[ind[0]]
 
     return noneLabel
@@ -223,7 +225,7 @@ def AddStringContainsDf(
 
   if newColName == None:
     newColName = 'string_contains_' + col
-  F = StringContainsMixedFcn(labelList=labelList,
+  F = String_isMixedFcn(labelList=labelList,
                              mixedLabel=mixedLabel,
                              noneLabel=noneLabel)
   df[newColName] = df[col].map(F)
@@ -235,7 +237,7 @@ labelList = ['aaa', 'ccc', 'ddd', 'bbb']
 mixedLabel = 'MIXED'
 noneLabel = 'None'
 
-Fcn = StringContainsMixedFcn(labelList=labelList, mixedLabel='MIXED',
+Fcn = String_isMixedFcn(labelList=labelList, mixedLabel='MIXED',
                              noneLabel='None')
 print(Fcn('aaa-bbb-awww'))
 print(Fcn('aaa-aas'))
@@ -278,10 +280,10 @@ def AddSeqUniqueOrMixed(df,
 
 '''
 df = pd.DataFrame({
-  'sequence': ['a>b>c>d', 'd>e>f>t>l>h'],
+  'seq': ['a>b>c>d', 'd>e>f>t>l>h'],
   'interface': ['aa>bb>cc>dd', 'dd>ee>ff>tt>ll>hh'],
   'browser': ['aaa>aaa>aaa>aaa', 'ddd>eee>fff>ttt>lll>hhh'],
-  'var2': [1, 2], 'sequence_count':[5, 6]
+  'var2': [1, 2], 'seq_count':[5, 6]
   })
 
 AddSeqUniqueOrMixed(df=df, seqCol='browser', sepStr='>')
@@ -328,7 +330,7 @@ print(Fcn('a', 'b'))
 ## generates a Fcn (SubsetDfFcn) which for each given subSet:
 ## generates a function SubsetDf=SubsetDfFcn(subSet)
 ## which adds a boolean column about membership of all the elements of subSet
-def ElemsExistSubsetDfFcn(setDf, setCol, indCols):
+def ElemsExist_subsetDfFcn(setDf, setCol, indCols):
 
   AddPairMembership = AddMembershipColFcn(setDf=setDf, setCol=setCol)
 
@@ -350,11 +352,11 @@ df = GenUsageData(userNum=4, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
 setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
 #print(setDf)
 AddPairMembership = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn = ElemsExistSubsetDfFcn(setDf=setDf, setCol='prod',
+SubsetDfFcn = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
 indCols=['user_id'])
 SubsetDf = SubsetDfFcn(pair)
 
-pair = ['randomWatchApp', 'randomBrowseApp']
+pair = ['randomWatchApp', 'browsingFeat']
 Mark(AddPairMembership(pair))
 Mark(SubsetDf(df=df)['user_id'].value_counts())
 '''
@@ -379,8 +381,8 @@ def CreateTimeSeq(
   ## we keep the main sequence column to build sequences (respCol)
   # we also keep the extra columns to build parallel sequences
   # we remove repetitions with UniqueList
-  df['sequence_undeduped'] = df[respCol]
-  respCol = 'sequence_undeduped'
+  df['seq_undeduped'] = df[respCol]
+  respCol = 'seq_undeduped'
   respCols = UniqueList([respCol] + extraCols)
 
   df2 = df[respCols].copy()
@@ -401,7 +403,7 @@ def CreateTimeSeq(
   df['all_ind'] = 0
   df['ind_change'] = False
   if len(indCols) > 0:
-    df = ConcatColsStr(df, cols=indCols, colName='all_ind', sepStr='-')
+    df = Concat_stringColsDf(df, cols=indCols, colName='all_ind', sepStr='-')
     df['ind_pair'] = list(zip(df['all_ind'], df['all_ind'].shift()))
     df['ind_change'] = df['ind_pair'].map(lambda x: len(set(x))) > 1
 
@@ -453,7 +455,7 @@ def CreateTimeSeq(
   seqDf = seqDf.reset_index()
   #end = time.time()
   #Mark(end - start, 'CreateTimeSeq running: time agg took')
-  #seqDf['sequence'] = seqDf[respCol]
+  #seqDf['seq'] = seqDf[respCol]
   del seqDf['tempCol']
   #del seqDf[respCol]
   seqDf = seqDf.reset_index(drop=True)
@@ -492,7 +494,7 @@ def DedupeSeqDf(
   seqCol,
   extraCols=[],
   sepStr='>',
-  dedupedColName='sequence_deduped',
+  dedupedColName='seq_deduped',
   parallelSuffix='_parallel'):
 
   def DedupingInd(s):
@@ -551,7 +553,7 @@ seqDf1 = CreateTimeSeq(
     extraCols=extraCols,
     ordered=False)
 
-DedupeSeqDf(df=seqDf1, seqCol='sequence', extraCols=extraCols, sepStr='>',
+DedupeSeqDf(df=seqDf1, seqCol='seq', extraCols=extraCols, sepStr='>',
             dedupedColName='seq_deduped', parallelSuffix='_parallel')
 '''
 
@@ -564,8 +566,8 @@ def CreateTimeSeq_andDedupe(
     indCols=[],
     extraCols=[],
     ordered=False,
-    seqCol='sequence_undeduped',
-    dedupedColName='sequence_deduped',
+    seqCol='seq_undeduped',
+    dedupedColName='seq_deduped',
     parallelSuffix='_parallel',
     method='split_by_ind'):
 
@@ -669,7 +671,7 @@ seqDf1 = CreateTimeSeq_andDedupe(
     indCols=['user_id'],
     extraCols=['country'],
     ordered=True,
-    dedupedColName='sequence_deduped',
+    dedupedColName='seq_deduped',
     parallelSuffix='_parallel',
     method='split_by_ind')
 end = time.time()
@@ -693,7 +695,7 @@ seqDf2 = CreateTimeSeq_andDedupe(
     indCols=['user_id'],
     extraCols=['country'],
     ordered=True,
-    dedupedColName='sequence_deduped',
+    dedupedColName='seq_deduped',
     parallelSuffix='_parallel',
     method='default')
 end = time.time()
@@ -741,19 +743,19 @@ def SeqToBasketDf(
   return df2
 
 '''
-df = pd.DataFrame({'sequence': ['a>b>c>d', 'd>e>f>t>l>h'],
+df = pd.DataFrame({'seq': ['a>b>c>d', 'd>e>f>t>l>h'],
   'interface': ['pc>phone>laptop>phone', 'phone>laptop>phone>phone>phone>pc'],
   'browser': ['ch>agsa>ch>agsa', 'agsa>ch>someBr>ch>someBr>ch'],
-  'var2': [1, 2], 'sequence_count':[5, 6]})
+  'var2': [1, 2], 'seq_count':[5, 6]})
 print(df)
 
-SeqToBasketDf(df=df, cols=['sequence', 'interface', 'browser'],
+SeqToBasketDf(df=df, cols=['seq', 'interface', 'browser'],
               sepStr='>', prefix='', suffix='_basket')
 '''
 
 ## complete deduping of a sequence,
 # we only keep the first occurrence of an elem in the seq
-def SeqCompDedupeDf(
+def Seq_completeDedupeDf(
   df, cols, sepStr='>', prefix='', suffix='_completely_deduped'):
 
   df2 = df.copy()
@@ -774,17 +776,17 @@ def SeqCompDedupeDf(
 
 '''
 df = pd.DataFrame({
-    'sequence': ['a>a>c>d>a', 'd>e>f>d>l>h'],
+    'seq': ['a>a>c>d>a', 'd>e>f>d>l>h'],
     'interface': ['pc>phone>laptop>phone', 'phone>laptop>phone>phone>phone>pc'],
     'browser': ['ch>agsa>ch>agsa', 'agsa>ch>someBr>ch>someBr>ch'],
     'var2': [1, 2],
-    'sequence_count': [5, 6]})
+    'seq_count': [5, 6]})
 
 print(df)
 
-SeqCompDedupeDf(
+Seq_completeDedupeDf(
     df=df,
-    cols=['sequence', 'interface', 'browser'],
+    cols=['seq', 'interface', 'browser'],
     sepStr='>',
     prefix='',
     suffix='_completely_deduped')
@@ -910,12 +912,12 @@ def ShiftedSeqDf(
   return seqDf
 
 '''
-df = pd.DataFrame({'sequence': ['a>b>c>d', 'd>e>f>t>l>h'],
+df = pd.DataFrame({'seq': ['a>b>c>d', 'd>e>f>t>l>h'],
   'interface': ['pc>phone>laptop>phone', 'phone>laptop>phone>phone>phone>pc'],
   'browser': ['ch>agsa>ch>agsa', 'agsa>ch>someBr>ch>someBr>ch'],
-  'var2': [1, 2], 'sequence_count':[5, 6]})
+  'var2': [1, 2], 'seq_count':[5, 6]})
 print(df)
-ShiftedSeqDf(df=df, seqCol='sequence', k=3, lagK=2, sepStr='>',
+ShiftedSeqDf(df=df, seqCol='seq', k=3, lagK=2, sepStr='>',
              extraCols=['interface', 'browser'])
 '''
 
@@ -933,7 +935,7 @@ def AddSeqOrdEvent(
 
     def F(x):
       if len(x) <= k:
-        return(noneValue)
+        return noneValue
       else:
         return x[k]
 
@@ -975,17 +977,17 @@ def AddSeqOrdEvent(
 
 
 '''
-df = pd.DataFrame({'sequence': ['a>b>c>d', 'd>e>f>t>l>h'], 'var2': [1, 2],
-                   'sequence_count':[5, 6]})
+df = pd.DataFrame({'seq': ['a>b>c>d', 'd>e>f>t>l>h'], 'var2': [1, 2],
+                   'seq_count':[5, 6]})
 print(df)
-seqDf = ShiftedSeqDf(df=df, seqCol='sequence', k=3, sepStr='>')
-AddSeqOrdEvent(df=seqDf, seqCol='sequence', sepStr='>')
+seqDf = ShiftedSeqDf(df=df, seqCol='seq', k=3, sepStr='>')
+AddSeqOrdEvent(df=seqDf, seqCol='seq', sepStr='>')
 '''
 
 '''
 size = 8
 df = pd.DataFrame({
-    'sequence':np.random.choice(
+    'seq':np.random.choice(
         a=['a>b>c>d', 'b>c>f>g', 'f>c>v>f>g>a>b'],
         size=8,
         replace=True),
@@ -995,8 +997,8 @@ df = pd.DataFrame({
     'col4':np.random.uniform(low=0.0, high=100.0, size=size)})
 
 #print(df)
-seqDf = ShiftedSeqDf(df=df, seqCol='sequence', k=3, sepStr='>')
-AddSeqOrdEvent(df=seqDf, seqCol='sequence')
+seqDf = ShiftedSeqDf(df=df, seqCol='seq', k=3, sepStr='>')
+AddSeqOrdEvent(df=seqDf, seqCol='seq')
 '''
 '''
 df0 = pd.DataFrame({
@@ -1011,7 +1013,7 @@ df0 = pd.DataFrame({
 
 print(df)
 seqDf = ShiftedSeqDf(df=df, seqCol=seqCol, k=3, sepStr='>')
-AddSeqOrdEvent(df=seqDf, seqCol='sequence')
+AddSeqOrdEvent(df=seqDf, seqCol='seq')
 '''
 
 ## adds a sequence length column to seq data
@@ -1032,13 +1034,13 @@ def AddSeqLength(df, seqCol, seqLenCol='seq_length', sepStr=None):
 
 '''
 df = pd.DataFrame({
-    'sequence': ['a>b>c>d', 'd>e>f>t>l>h'],
+    'seq': ['a>b>c>d', 'd>e>f>t>l>h'],
     'var2': [1, 2],
-    'sequence_count':[5, 6]})
+    'seq_count':[5, 6]})
 print(df)
-seqDf = ShiftedSeqDf(df=df, seqCol='sequence', k=3, sepStr='>')
-seqDf2 = AddSeqOrdEvent(df=seqDf, seqCol='sequence', sepStr='>')
-seqDf3 = AddSeqLength(df=seqDf, seqCol='sequence', sepStr='>')
+seqDf = ShiftedSeqDf(df=df, seqCol='seq', k=3, sepStr='>')
+seqDf2 = AddSeqOrdEvent(df=seqDf, seqCol='seq', sepStr='>')
+seqDf3 = AddSeqLength(df=seqDf, seqCol='seq', sepStr='>')
 '''
 
 ## dedupe consecutive elements repetitions in a seq
@@ -1066,7 +1068,7 @@ DedupeSeq(s=['a', 'a', 'b', 'b'], sepStr=None)
 # for the seq containing prods
 # seqDimCols are the dimensions used in the sequence definition,
 # for example if seqDimCols=['prod', 'form_factor']
-# then the sequence elements look like: randomEmailApp-COMP
+# then the sequence elements look like: mailingFeat-COMP
 # indCols are the dimensions for which we slice the sequence data
 # keepIndCols specifies if we should also keep the indCols in the seq table
 # e.g. indCols=['user_id', 'date'] would insure
@@ -1100,7 +1102,7 @@ def CreateSeqDf(
   df = df.reset_index(drop=True)
 
   #Mark(df)
-  df = ConcatColsStr(df, cols=seqDimCols, colName=None, sepStr='-')
+  df = Concat_stringColsDf(df, cols=seqDimCols, colName=None, sepStr='-')
   respCol = '-'.join(seqDimCols)
 
   seqDf = CreateTimeSeq_andDedupe(
@@ -1112,8 +1114,8 @@ def CreateSeqDf(
       indCols=indCols,
       extraCols=extraCols,
       ordered=ordered,
-      seqCol='sequence_undeduped',
-      dedupedColName='sequence_deduped',
+      seqCol='seq_undeduped',
+      dedupedColName='seq_deduped',
       parallelSuffix='_parallel',
       method=method)
 
@@ -1123,7 +1125,7 @@ def CreateSeqDf(
   if addResetDate_seqStartDate:
     seqDf['date'] = seqDf['seq_start_timestamp'].dt.date
 
-  seqDf['full_seq_duration_secs'] =  (seqDf['seq_end_timestamp'] -
+  seqDf['full_seq_dur_secs'] =  (seqDf['seq_end_timestamp'] -
     seqDf['seq_start_timestamp']).values / np.timedelta64(1, 's')
 
   for col in ['seq_start_timestamp', 'seq_end_timestamp', 'date']:
@@ -1134,46 +1136,47 @@ def CreateSeqDf(
   if seqIdCols is None:
     seqIdCols = indCols
 
-  seqDf = ConcatColsStr(df=seqDf, cols=seqIdCols, colName='seq_id', sepStr='-')
+  seqDf = Concat_stringColsDf(
+      df=seqDf, cols=seqIdCols, colName='seq_id', sepStr='-')
   seqDf['seq_id'] =  seqDf['seq_id'] + '-' + seqDf['seq_start_timestamp']
 
   ## add basket info for full sequences (not trimmed)
   if addOrigSeqInfo:
     seqDf = SeqToBasketDf(
         df=seqDf,
-        cols=(['sequence_deduped'] + extraCols),
+        cols=(['seq_deduped'] + extraCols),
         sepStr='>',
         prefix='full_',
         suffix='_basket')
 
     ## add completely deduped versions for the full sequences
-    seqDf = SeqCompDedupeDf(
+    seqDf = Seq_completeDedupeDf(
         df=seqDf,
-        cols=(['sequence_deduped'] + extraCols),
+        cols=(['seq_deduped'] + extraCols),
         sepStr='>',
         prefix='full_',
         suffix='_completely_deduped')
 
-    for col in (['sequence_undeduped', 'sequence_deduped'] +
+    for col in (['seq_undeduped', 'seq_deduped'] +
                 extraCols + extraCols_parallel):
       seqDf['full_' + col] = seqDf[col]
 
     ## fix the over expressive column names
     seqDf.rename(
         columns={
-            'full_sequence_deduped_completely_deduped': 'full_sequence_completely_deduped',
-            'full_sequence_deduped_basket': 'full_sequence_basket'},
+            'full_seq_deduped_completely_deduped': 'full_seq_completely_deduped',
+            'full_seq_deduped_basket': 'full_seq_basket'},
         inplace=True)
 
   seqDf = AddSeqLength(
       df=seqDf,
-      seqCol='sequence_undeduped',
+      seqCol='seq_undeduped',
       seqLenCol='full_seq_undeduped_length',
       sepStr='>')
 
   seqDf = AddSeqLength(
       df=seqDf,
-      seqCol='sequence_deduped',
+      seqCol='seq_deduped',
       seqLenCol='full_seq_deduped_length',
       sepStr='>')
 
@@ -1183,7 +1186,7 @@ def CreateSeqDf(
   # in case we want to get back un-shifted seq only
   seqDf = ShiftedSeqDf(
       df=seqDf,
-      seqCol='sequence_deduped',
+      seqCol='seq_deduped',
       k=trim,
       lagK=lagTrim,
       sepStr='>',
@@ -1194,7 +1197,7 @@ def CreateSeqDf(
   ## adding event order
   seqDf = AddSeqOrdEvent(
       df=seqDf.copy(),
-      seqCol='trimmed_sequence_deduped',
+      seqCol='trimmed_seq_deduped',
       sepStr='>',
       noneValue='BLANK')
 
@@ -1202,7 +1205,7 @@ def CreateSeqDf(
   seqDf = SeqToBasketDf(
     df=seqDf,
     cols=(
-        ['trimmed_sequence_deduped']
+        ['trimmed_seq_deduped']
         + [('trimmed_'+ x) for x in extraCols_parallel]),
     sepStr='>',
     prefix='',
@@ -1212,15 +1215,15 @@ def CreateSeqDf(
   # (basket is more reduction that deduping so we drop deduped)
   seqDf.rename(
         columns={
-            'trimmed_sequence_deduped_basket': 'trimmed_sequence_basket'},
+            'trimmed_seq_deduped_basket': 'trimmed_sequence_basket'},
         inplace=True)
 
-  seqDf['trimmed_sequence_count'] = 1
+  seqDf['trimmed_seq_count'] = 1
 
   ## adding seq length
   seqDf = AddSeqLength(
       df=seqDf,
-      seqCol='trimmed_sequence_deduped',
+      seqCol='trimmed_seq_deduped',
       seqLenCol='trimmed_seq_deduped_length',
       sepStr='>')
 
@@ -1239,7 +1242,7 @@ def CreateSeqDf(
             lambda s: DedupeSeq(s, sepStr='>')))
 
   ## removing the columns created on the fly which are not needed.
-  for col in ['sequence_undeduped'] + extraCols:
+  for col in ['seq_undeduped'] + extraCols:
     del seqDf[col]
 
   return seqDf
@@ -1270,10 +1273,10 @@ seqDf = CreateSeqDf(
 for col in list(seqDf.columns):
   print(col)
 
-seqDf[['full_sequence_undeduped',
-       'full_sequence_deduped',
-       'trimmed_sequence_deduped',
-       'trimmed_sequence_deduped_basket',
+seqDf[['full_seq_undeduped',
+       'full_seq_deduped',
+       'trimmed_seq_deduped',
+       'trimmed_seq_deduped_basket',
        'trimmed_form_factor_parallel',
        'trimmed_form_factor_parallel_basket',
        'trimmed_form_factor_parallel_mix']]
@@ -1318,16 +1321,16 @@ seqDf2 = CreateSeqDf(
 '''
 ## better example
 df = pd.DataFrame(columns=['country', 'user_id', 'date', 'time', 'end_time', 'prod', 'form_factor'])
-df.loc[0] =       ['US', '0', '2017-04-12', '2017-04-12 00:03:00', '2017-04-12 00:04:00', 'randomPresoApp', 'COMP']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:04:01', '2017-04-12 00:05:03', 'randomPhotoApp', 'COMP']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:05:05', '2017-04-12 00:06:04', 'randomPresoApp', 'PHN']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:06:05', '2017-04-12 00:06:08', 'randomPresoApp', 'PHN']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:06:30', '2017-04-12 00:06:45', 'randomSheetApp', 'COMP']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:07:00', '2017-04-12 00:07:50', 'randomDocApp', 'PHN']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:14:00', '2017-04-12 00:14:10', 'randomPhotoApp', 'COMP']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:16:00', '2017-04-12 00:18:59', 'randomLocApp', 'COMP']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:19:00', '2017-04-12 00:20:00', 'randomLocApp', 'COMP']
-df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:22:00', '2017-04-12 00:22:00', 'randomBrowseApp', 'PHN']
+df.loc[0] =       ['US', '0', '2017-04-12', '2017-04-12 00:03:00', '2017-04-12 00:04:00', 'PresFeat', 'COMP']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:04:01', '2017-04-12 00:05:03', 'photoFeat', 'COMP']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:05:05', '2017-04-12 00:06:04', 'PresFeat', 'PHN']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:06:05', '2017-04-12 00:06:08', 'PresFeat', 'PHN']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:06:30', '2017-04-12 00:06:45', 'exploreFeat', 'COMP']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:07:00', '2017-04-12 00:07:50', 'editingFeat', 'PHN']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:14:00', '2017-04-12 00:14:10', 'photoFeat', 'COMP']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:16:00', '2017-04-12 00:18:59', 'locFeat', 'COMP']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:19:00', '2017-04-12 00:20:00', 'locFeat', 'COMP']
+df.loc[len(df)] = ['US', '0', '2017-04-12', '2017-04-12 00:22:00', '2017-04-12 00:22:00', 'browsingFeat', 'PHN']
 
 for col in ['time', 'end_time']:
   df[col] = df[col].map(ConvertToDateTimeFcn())
@@ -1411,11 +1414,11 @@ def BuildAndWriteSeqDf(
 
   full_[col]_parallel: for a property given in col,
   (we refer to these properties in code by seqPropCols),
-  this is the parallel sequence to “full_sequence_deduped
+  this is the parallel sequence to “full_seq_deduped
 
-  full_sequence_deduped:  this is the full sequence after complete deduping
+  full_seq_deduped:  this is the full sequence after complete deduping
 
-  full_sequence_basket: this is the basket (set) of elements appearing
+  full_seq_basket: this is the basket (set) of elements appearing
   in the full sequence
 
   trimmed_seq_deduped: this is the sequence after deduping and trimming.
@@ -1452,7 +1455,7 @@ def BuildAndWriteSeqDf(
   track a specific property.
 
   subseq_1_2, subseq_1_2_3, subseq_1_2_3_4: these are shorter versions of the
-  main sequence data given in "full_sequence_deduped"
+  main sequence data given in "full_seq_deduped"
   """
 
   seqDf = CreateSeqDf(
@@ -1494,12 +1497,12 @@ def BuildAndWriteSeqDf(
 def GenRandomSeq(size, pvals=[0.5, 0.1] + [0.05]*8):
 
   x = np.random.multinomial(n=10, pvals=pvals, size=size)
-  df = pd.DataFrame({'sequence': x.tolist()})
+  df = pd.DataFrame({'seq': x.tolist()})
   def F(x):
     x = [str(y) for y in x]
     return '>'.join(x)
-  df['sequence'] = df['sequence'].map(F)
-  df['sequence_count'] = np.random.poisson(lam=5.0, size=size)
+  df['seq'] = df['seq'].map(F)
+  df['seq_count'] = np.random.poisson(lam=5.0, size=size)
 
   return df
 
@@ -1510,9 +1513,9 @@ def SimulationSeqOdds():
 
   res = SeqConfIntDf(
       df=df,
-      seqCol='sequence',
+      seqCol='seq',
       Fcn=SeqTransOddsFcn,
-      seqCountCol='sequence_count',
+      seqCountCol='seq_count',
       shift=True,
       sepStr='>',
       bsSize=200)

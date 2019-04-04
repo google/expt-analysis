@@ -17,13 +17,6 @@
 
 ## functions for creating clusters using K-means and plotting them
 
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
-
 ## subset/slice df according to a condition list.
 SliceDfCondition = function(df, conditions) {
 
@@ -707,7 +700,8 @@ OrderPlotClustCentMid = function(
 
 ## plot clustering results
 PlotClustResults = function(dfCl, size=c(800, 1200)) {
-  set_plot_options(width=size[1], height=size[2])
+
+  #set_plot_options(width=size[1], height=size[2])
 
   Multiplot(
       pltList=c(dfCl[["clustpltList"]], pltList=dfCl[["corpltList"]]), ncol=2)
@@ -715,9 +709,9 @@ PlotClustResults = function(dfCl, size=c(800, 1200)) {
 
 Example = function() {
   source(src)
-  varNum = 6 #@param
-  sampleSize = 50 #@param
-  levOrd = c("X4", "X3", "X1", "X2", "X5", "X6") #@param
+  varNum = 6 # param
+  sampleSize = 50 # param
+  levOrd = c("X4", "X3", "X1", "X2", "X5", "X6") # param
   # this is to generate a variance-covariance matrix via Choleski decomp
   l = matrix(0, varNum, varNum)
   diag(l) = 1
@@ -734,7 +728,7 @@ Example = function() {
   df1 = data.frame(x)
 
 
-  clustNum = 8 #@param
+  clustNum = 8 # param
   dfCl = OrderPlotClustCentMid(df=df1, centers=clustNum,
     levOrd=levOrd, method="kmeans")
   dfBu = OrderPlotClustCentMid(df=df1, centers=10, method="bucket")

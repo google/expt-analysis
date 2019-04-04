@@ -17,13 +17,6 @@
 
 # Functions for expt analysis
 
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
-
 LogitInv = function(x) {
   exp(x) / (1 + exp(x))
 }
@@ -720,13 +713,13 @@ BalanceSampleSize = function(
     itemCols = c("dummy_item")
     df[ , "dummy_item"] = 1:nrow(df)}
 
-  df = ConcatColsStr(
+  df = Concat_stringColsDf(
     df=df,
     cols=itemCols,
     colName="item_combin",
     sepStr="-")
 
-  df = ConcatColsStr(
+  df = Concat_stringColsDf(
     df=df,
     cols=sliceCols,
     colName="slice_combin",
@@ -1098,7 +1091,7 @@ Check_forUnbalance = function(dt, predCols) {
   userCntDf = data.frame(userCntDt)
 
   colName = paste0(predCols, collapse="_")
-  userCntDf = ConcatColsStr(
+  userCntDf = Concat_stringColsDf(
       df=userCntDf,
       cols=predCols,
       colName="slice", sepStr="-")

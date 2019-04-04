@@ -1,32 +1,17 @@
-# Copyright 2019 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# author: Reza Hosseini
-
 ## simulation study code
 
 #library("ggplot2")
 library("data.table")
 library("data.analysis")
 library("rglib")
+library("tfruns")
 
-flags.DEFINE_numeric("sim", "", "the sim number.")
+FLAGS = flags(flag_numeric(("sim", "", "the sim number."))
 
 readPath = "~/data/"
 writePath = "~/data"
+ver = "v1"
 
-ver = "v19"
 simData = ReadSimData(ver, dataPath=readPath)
 
 ConvgDt = function(metricInfo) {
@@ -59,7 +44,7 @@ ConvgDt = function(metricInfo) {
 
   dt[ , "sim_num"] = FLAGS$sim
 
-  fn = gfile(
+  fn = file(
       paste0(
           writePath, ver, "/", metricInfo[["name"]], "/estim_dt_",
           as.character(FLAGS$sim), "_", ver, ".csv"), "w")

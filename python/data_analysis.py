@@ -133,7 +133,7 @@ def Signif(n):
 
 ### Reading / Writing  Data
 
-## read csv from borg or locally
+## read csv
 def ReadCsv(
     fn,
     sep=',',
@@ -152,13 +152,12 @@ def ReadCsv(
     print(fn + ' was read.')
   return df
 
-## write csv (or tsv) from borg or locally
+## write csv (or tsv)
 def WriteCsv(
     fn,
     df,
     sep=',',
     append=False,
-    borg=True,
     index=False,
     printLog=False):
 
@@ -210,7 +209,6 @@ def ReadMultipleDf(
       dfAll = df
     else:
       dfAll = dfAll.append(df, ignore_index=True)
-    #dfList.append(df)
   return dfAll
 
 ## Read all files in a dir with same columns
@@ -258,12 +256,18 @@ def ReadDirData(
 def ReadDirData_parallel(
     path, ListDirF=ListDir, ReadF=ReadCsv,
     WriteF=WriteCsv, writeFn=None,
-    DfFilterF=None, returnDfDict=False):
+    DfFilterF=None, returnDfDict=False,
+    limitFileNum=None):
 
   print(path)
   fileList = ListDirF(path)
   print(fileList)
-  #dfList = list()
+
+  if limitFileNum is not None:
+    k = min(limitFileNum, len(fileList))
+    fileList = fileList[:k]
+
+
   outDf = None
 
   dfDict = {}
@@ -311,6 +315,53 @@ def ReadDirData_parallel(
   return outDf
 
 
+# write sharded data wrt a partition column
+# the data is written in parallel for speed purposes
+# also at read time we can read data faster
+def Write_shardedData_parallel(
+    df, fnPrefix, path, fnExten=".csv",
+    partitionCol=None,
+    shardNum=100, WriteF=WriteCsv,
+    limitFileNum=None):
+
+  if partitionCol is None:
+    partitionCol = "dummy_col"
+    df["dummy_col"] = range(len(df))
+
+  def Bucket(s):
+    return int(hashlib.sha1(str(s)).hexdigest(), 16) % (shardNum)
+
+  df["shard"] = df[partitionCol].map(Bucket)
+
+  if partitionCol is None:
+    del df["dummy_col"]
+
+  def Write(bucket):
+    df0 = df[df["shard"] == bucket]
+    fn = path + fnPrefix + "_" + str(bucket) + ".csv"
+    WriteF(fn=fn, df=df0, sep=',', append=False)
+    print(fn + " was written")
+
+  buckets = list(set(df["shard"].values))
+
+  if limitFileNum is not None:
+    k = min(limitFileNum, len(buckets))
+    buckets = buckets[:k]
+
+  [Write(bucket) for bucket in buckets]
+
+  return None
+
+"""
+df = GenUsageDf_forTesting()
+path = ""
+Write_shardedData_parallel(
+    df=df, fnPrefix="test", path=path, fnExten=".csv",
+    partitionCol="user_id",
+    WriteF=WriteCsv)
+
+"""
+
 ############### Part 1: Data frame and data wrangling functions
 
 ## generate a data frame manually for testing data frame functions
@@ -322,115 +373,115 @@ def GenUsageDf_forTesting():
       'end_time', 'prod', 'form_factor'])
 
   df.loc[len(df)] = ['US', '0', 'base', '2017-04-12', '2017-04-12 00:03:00',
-                     '2017-04-12 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['US', '0', 'base', '2017-04-12', '2017-04-12 00:04:01',
-                     '2017-04-12 00:05:03', 'randomPhotoApp', 'COMP']
+                     '2017-04-12 00:05:03', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['US', '0', 'base', '2017-04-12', '2017-04-12 00:05:05',
-                     '2017-04-12 00:06:04', 'randomPresoApp', 'PHN']
+                     '2017-04-12 00:06:04', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '0', 'base', '2017-04-12', '2017-04-12 00:06:05',
-                     '2017-04-12 00:06:08', 'randomPresoApp', 'PHN']
+                     '2017-04-12 00:06:08', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '0', 'base', '2017-04-12', '2017-04-12 00:06:30',
-                     '2017-04-12 00:06:45', 'randomSheetApp', 'COMP']
+                     '2017-04-12 00:06:45', 'exploreFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:07:00',
-                     '2017-04-12 00:07:50', 'randomDocApp', 'PHN']
+                     '2017-04-12 00:07:50', 'editingFeat', 'PHN']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:14:00',
-                     '2017-04-12 00:14:10', 'randomPhotoApp', 'COMP']
+                     '2017-04-12 00:14:10', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:16:00',
-                     '2017-04-12 00:17:09', 'randomLocApp', 'COMP']
+                     '2017-04-12 00:17:09', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base',  '2017-04-12', '2017-04-12 00:18:00',
-                     '2017-04-12 00:18:30', 'randomBrowseApp', 'COMP']
+                     '2017-04-12 00:18:30', browsingFeat, 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:20:00',
-                     '2017-04-12 00:21:00', 'randomLocApp', 'COMP']
+                     '2017-04-12 00:21:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:22:00',
-                     '2017-04-12 00:22:00', 'randomBrowseApp', 'PHN']
+                     '2017-04-12 00:22:00', browsingFeat, 'PHN']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:03:00',
-                     '2017-04-12 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:04:01',
-                     '2017-04-12 00:05:03', 'randomPhotoApp', 'COMP']
+                     '2017-04-12 00:05:03', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:05:05',
-                     '2017-04-12 00:06:04', 'randomPresoApp', 'PHN']
+                     '2017-04-12 00:06:04', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '2', 'base', '2017-04-12', '2017-04-12 00:06:05',
-                     '2017-04-12 00:06:08', 'randomPresoApp', 'PHN']
+                     '2017-04-12 00:06:08', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '2', 'base', '2017-04-12', '2017-04-12 00:06:30',
-                     '2017-04-12 00:06:45', 'randomSheetApp', 'COMP']
+                     '2017-04-12 00:06:45', 'exploreFeat', 'COMP']
   df.loc[len(df)] = ['US', '2', 'base', '2017-04-12', '2017-04-12 00:07:00',
-                     '2017-04-12 00:07:50', 'randomDocApp', 'PHN']
+                     '2017-04-12 00:07:50', 'editingFeat', 'PHN']
   df.loc[len(df)] = ['JP', '3', 'test', '2017-04-12', '2017-04-12 00:14:00',
-                     '2017-04-12 00:14:10', 'randomPhotoApp', 'COMP']
+                     '2017-04-12 00:14:10', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['JP', '3', 'test', '2017-04-12', '2017-04-12 00:14:20',
-                     '2017-04-12 00:18:59', 'randomLocApp', 'COMP']
+                     '2017-04-12 00:18:59', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '3', 'test', '2017-04-12', '2017-04-12 00:19:00',
-                     '2017-04-12 00:20:00', 'randomLocApp', 'COMP']
+                     '2017-04-12 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '3', 'test', '2017-04-12', '2017-04-12 00:20:20',
-                     '2017-04-12 00:22:00', 'randomBrowseApp', 'PHN']
+                     '2017-04-12 00:22:00', browsingFeat, 'PHN']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:03:10',
-                     '2017-04-14 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-14 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:04:10',
-                     '2017-04-14 00:05:03', 'randomPhotoApp', 'COMP']
+                     '2017-04-14 00:05:03', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:05:15',
-                     '2017-04-14 00:06:04', 'randomPresoApp', 'PHN']
+                     '2017-04-14 00:06:04', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:06:01',
-                     '2017-04-14 00:06:08', 'randomPresoApp', 'PHN']
+                     '2017-04-14 00:06:08', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:06:35',
-                     '2017-04-14 00:06:45', 'randomPresoApp', 'COMP']
+                     '2017-04-14 00:06:45', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['US', '5', 'test', '2017-04-14', '2017-04-14 00:03:07',
-                     '2017-04-14 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-14 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['US', '5', 'test', '2017-04-14', '2017-04-14 00:04:04',
-                     '2017-04-14 00:05:03', 'randomPhotoApp', 'COMP']
+                     '2017-04-14 00:05:03', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['US', '5', 'test', '2017-04-14', '2017-04-14 00:05:04',
-                     '2017-04-14 00:06:04', 'randomPresoApp', 'PHN']
+                     '2017-04-14 00:06:04', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '5', 'test', '2017-04-14', '2017-04-14 00:06:03',
-                     '2017-04-14 00:06:08', 'randomPresoApp', 'PHN']
+                     '2017-04-14 00:06:08', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['US', '5', 'test', '2017-04-14', '2017-04-14 00:06:28',
-                     '2017-04-14 00:06:45', 'randomPresoApp', 'COMP']
+                     '2017-04-14 00:06:45', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['JP', '6', 'test', '2017-04-14', '2017-04-14 00:14:01',
-                     '2017-04-14 00:14:10', 'randomPhotoApp', 'COMP']
+                     '2017-04-14 00:14:10', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['JP', '6', 'test', '2017-04-14', '2017-04-14 00:14:19',
-                     '2017-04-14 00:18:59', 'randomLocApp', 'COMP']
+                     '2017-04-14 00:18:59', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '6', 'test', '2017-04-14', '2017-04-14 00:19:10',
-                     '2017-04-14 00:20:00', 'randomLocApp', 'COMP']
+                     '2017-04-14 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '6', 'test', '2017-04-14', '2017-04-14 00:20:11',
-                     '2017-04-14 00:22:00', 'randomBrowseApp', 'PHN']
+                     '2017-04-14 00:22:00', browsingFeat, 'PHN']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:14:11',
-                     '2017-04-15 00:14:10', 'randomPhotoApp', 'COMP']
+                     '2017-04-15 00:14:10', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:14:22',
-                     '2017-04-15 00:18:59', 'randomLocApp', 'COMP']
+                     '2017-04-15 00:18:59', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:19:57',
-                     '2017-04-15 00:20:00', 'randomLocApp', 'COMP']
+                     '2017-04-15 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', 'randomBrowseApp', 'PHN']
+                     '2017-04-15 00:22:00', browsingFeat, 'PHN']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:03:00',
-                     '2017-04-12 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:04:01',
-                     '2017-04-12 00:05:03', 'randomPhotoApp', 'COMP']
+                     '2017-04-12 00:05:03', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:05:05',
-                     '2017-04-12 00:06:04', 'randomPresoApp', 'PHN']
+                     '2017-04-12 00:06:04', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:06:05',
-                     '2017-04-12 00:06:08', 'randomPresoApp', 'PHN']
+                     '2017-04-12 00:06:08', 'PresFeat', 'PHN']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:06:30',
-                     '2017-04-12 00:06:45', 'randomSheetApp', 'COMP']
+                     '2017-04-12 00:06:45', 'exploreFeat', 'COMP']
   df.loc[len(df)] = ['FR', '9', 'test', '2017-04-15', '2017-04-15 00:14:11',
-                     '2017-04-15 00:14:10', 'randomPhotoApp', 'COMP']
+                     '2017-04-15 00:14:10', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['FR', '9', 'test', '2017-04-15', '2017-04-15 00:14:22',
-                     '2017-04-15 00:18:59', 'randomLocApp', 'COMP']
+                     '2017-04-15 00:18:59', 'locFeat', 'COMP']
   df.loc[len(df)] = ['FR', '9', 'test', '2017-04-15', '2017-04-15 00:19:57',
-                     '2017-04-15 00:20:00', 'randomLocApp', 'COMP']
+                     '2017-04-15 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['FR', '9', 'test', '2017-04-15', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', 'randomBrowseApp', 'PHN']
+                     '2017-04-15 00:22:00', browsingFeat, 'PHN']
   df.loc[len(df)] = ['NG', '10', 'test', '2017-04-16', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', 'randomStorageApp', 'PHN']
+                     '2017-04-15 00:22:00', 'StorageFeat', 'PHN']
   df.loc[len(df)] = ['IR', '11', 'test', '2017-04-12', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', 'randomBrowseApp', 'PHN']
+                     '2017-04-15 00:22:00', browsingFeat, 'PHN']
   df.loc[len(df)] = ['IR', '12', 'base', '2017-04-16', '2017-04-15 00:21:56',
                      '2017-04-15 00:22:00', 'randomWatchApp', 'PHN']
   df.loc[len(df)] = ['IR', '13', 'base', '2017-04-12', '2017-04-12 00:03:00',
-                     '2017-04-12 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['RU', '14', 'base', '2017-04-12', '2017-04-12 00:03:00',
-                     '2017-04-12 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['RU', '15', 'base', '2017-04-13', '2017-04-13 00:03:00',
-                     '2017-04-13 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-13 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['RU', '16', 'base', '2017-04-14', '2017-04-14 00:03:00',
-                     '2017-04-14 00:04:00', 'randomPresoApp', 'COMP']
+                     '2017-04-14 00:04:00', 'PresFeat', 'COMP']
 
   df['user_id'] = 'id' + df['user_id']
   def F(x):
@@ -821,7 +872,7 @@ def CombinFreqDf(df, cols=None, countColName='cnt', propColName='prop (%)'):
 
 '''
 df0 = pd.DataFrame({
-    'app':['fb', 'fb', 'randomEmailApp', 'randomEmailApp'],
+    'app':['fb', 'fb', 'mailingFeat', 'mailingFeat'],
     'party':['1P', '1P', '3P', '3P']})
 CombinFreqDf(df=df0, cols=['app', 'party'])
 '''
@@ -833,6 +884,7 @@ def Remap_lowFreqCategs(
     newLabels="nan",
     otherLabelsToReMap=None,
     freqThresh=5,
+    propThresh=0.1,
     labelsNumMax=None):
 
   df2 = df.copy()
@@ -840,6 +892,9 @@ def Remap_lowFreqCategs(
 
   if Type(freqThresh) == 'int':
     freqThresh = [freqThresh] * k
+
+  if Type(propThresh) in ['int', 'float']:
+    propThresh = [propThresh] * k
 
   if Type(newLabels) == 'str':
     newLabels = [newLabels] * k
@@ -850,14 +905,14 @@ def Remap_lowFreqCategs(
   def GetFreqLabels(i):
 
     col = cols[i]
-    freqDf = pd.DataFrame(df2[col].value_counts())
-    freqDf.columns= ["freq"]
-    freqDf[col] = freqDf.index
-    freqLabels = list(freqDf[freqDf["freq"] > freqThresh[i]][col].values)
+    freqDf = CombinFreqDf(df[col])
+
+    ind = (freqDf["cnt"] > freqThresh[i]) & (freqDf["prop (%)"] > propThresh[i])
+    freqLabels = list(freqDf.loc[ind][col].values)
 
     if labelsNumMax is not None:
       maxNum = min(len(freqLabels), labelsNumMax[i])
-      freqLabels = freqLabels[0:(maxNum-1)]
+      freqLabels = freqLabels[0:(maxNum)]
 
     if otherLabelsToReMap is not None:
       freqLabels = list(set(freqLabels) - set(otherLabelsToReMap))
@@ -948,7 +1003,7 @@ def MergeTablesDict(tabDict):
 
 ## creating a single string column using multiple columns (cols)
 # and adding that to the data frame
-def ConcatColsStr(df, cols, colName=None, sepStr='-'):
+def Concat_stringColsDf(df, cols, colName=None, sepStr='-'):
 
   x = ''
   if colName == None:
@@ -964,7 +1019,7 @@ def ConcatColsStr(df, cols, colName=None, sepStr='-'):
 
 '''
 df = pd.DataFrame({'a':range(3), 'b':['rr',  'gg', 'gg'], 'c':range(3)})
-ConcatColsStr(df=df, cols=['a', 'b', 'c'], colName=None, sepStr='-')
+Concat_stringColsDf(df=df, cols=['a', 'b', 'c'], colName=None, sepStr='-')
 '''
 
 ## flatten a column (listCol) of df with multiple values
@@ -1921,7 +1976,7 @@ def InterpCategColWrt(
 '''
 df = pd.DataFrame({
     'user_id':[1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3],
-    'os':['and', 'and', 'and', 'randomOs', 'randomOs', 'randomOs', 'randomOs', 'and', 'and', 'and', 'randomOs', 'randomOs', 'randomOs', 'randomOs', 'randomOs'],
+    'os':['and', 'and', 'and', 'randSurface', 'randSurface', 'randSurface', 'randSurface', 'and', 'and', 'and', 'randSurface', 'randSurface', 'randSurface', 'randSurface', 'randSurface'],
     'y':[None, 'c', 'b', 'b', 'b', 'b', 'a', 'a', 'a', 'b', 'b', 'nan', 'b', 'b', None],
     'country': ['us', 'us', 'us', 'us', 'us', 'jp', 'us', 'jp', 'us', 'us', 'us', 'us', 'jp', 'us', 'us']})
 
@@ -1999,14 +2054,14 @@ def AddTotalsDf(
 '''
 df = pd.DataFrame({
     'country':['JP', 'JP', 'JP', 'BR', 'BR', 'BR', 'JP', 'JP', 'JP', 'BR'],
-    'sequence':['a>b', 'a>b', 'b>a', 'b>a', 'a>b', 'a>b', 'a>c', 'a>c', 'b>c', 'c>b'],
+    'seq':['a>b', 'a>b', 'b>a', 'b>a', 'a>b', 'a>b', 'a>c', 'a>c', 'b>c', 'c>b'],
     '1st':['a', 'a', 'b', 'b', 'a', 'a', 'a', 'a', 'b', 'c'],
     '2nd':['b', 'b', 'a', 'a', 'b', 'b', 'c', 'c', 'c', 'b'],
     'count':[10, 11, 1, 20, 2, 2, 2, 200, 1, 1],
     'utility':[-10, -11, 1, 20, 2, 2, 2, -200, 1, 1],})
 
 sliceCols = ['country']
-categCols = ['sequence', '1st', '2nd']
+categCols = ['seq', '1st', '2nd']
 valueCols = ['count', 'utility']
 aggFnDict = {'count':sum, 'utility':np.mean}
 AddTotalsDf(
@@ -2212,15 +2267,27 @@ def PlotCI(df, colUpper, colLower, y=None, col=None, ciHeight=0.5,
         linewidth=2,
         dashes=[6, 2])
 
-  p = plt.barh(
-      bottom=y,
-      width=df[colUpper]-df[colLower],
-      left=df[colLower],
-      color=color,
-      edgecolor='black',
-      height=ciHeight,
-      alpha=0.6,
-      label=pltLabel);
+  if int(matplotlib.__version__[0]) < 3:
+    p = plt.barh(
+        bottom=y,
+        width=(df[colUpper]-df[colLower]).values,
+        left=df[colLower],
+        color=color,
+        edgecolor='black',
+        height=ciHeight,
+        alpha=0.6,
+        label=pltLabel)
+  else:
+    p = plt.barh(
+        y=y,
+        width=(df[colUpper]-df[colLower]).values,
+        left=df[colLower],
+        align="edge",
+        color=color,
+        edgecolor='black',
+        height=ciHeight,
+        alpha=0.6,
+        label=pltLabel)
 
   if labelCol != None:
     plt.yticks(y, df[labelCol].values, rotation='vertical');
@@ -2234,11 +2301,12 @@ PlotCI(df=df0, colUpper='upper', colLower='lower', y=None, col='med',
 
 ## compares the CI's for available labels in labeCol
 # we do that for each slice with different color to compare
-def PlotCIWrt(df, colUpper, colLower, sliceCols, labelCol, col=None,
-              ciHeight=0.5, rotation = 0, addVerLines=[], logScale=False,
-              lowerLim=None, pltTitle='', figSize=[5, 20]):
+def PlotCIWrt(
+    df, colUpper, colLower, sliceCols, labelCol, col=None,
+    ciHeight=0.5, rotation = 0, addVerLines=[], logScale=False,
+    lowerLim=None, pltTitle='', figSize=[5, 20]):
 
-  df2 = ConcatColsStr(
+  df2 = Concat_stringColsDf(
     df=df.copy(),
     cols=sliceCols,
     colName='slice_comb',
@@ -2254,7 +2322,7 @@ def PlotCIWrt(df, colUpper, colLower, sliceCols, labelCol, col=None,
   slicesSet = set(df2['slice_comb'])
   g = df2.groupby(['slice_comb'])
   sliceNum = len(g)
-  sliceNames = g.groups.keys()
+  sliceNames = list(g.groups.keys())
   sliceNames.sort()
   ColorFcn = GetColorGridFcn(sliceNum + 2)
 
@@ -2525,3 +2593,176 @@ def Plt_compareDensity(df, compareCol, valueCol, compareValues=None):
   plt.title('Compare Density Plot for Multiple ' + compareCol)
   plt.xlabel(valueCol)
   plt.ylabel('Density')
+
+
+
+## drops (multiple) ending vowels from a string
+def DropEndingVowels(s, minLength=2):
+
+  cond = True
+  while cond and len(s) > minLength:
+    if s[len(s)-1].lower() in ["a", "o", "e", "u", "i"]:
+      s = s[0:(len(s)-1)]
+    else:
+      cond = False
+
+  return s
+
+def DropEndingChars(s, chars, minLength=2):
+
+  cond = True
+  while cond and len(s) > minLength:
+    if s[len(s)-1].lower() in chars:
+      s = s[0:(len(s)-1)]
+    else:
+      cond = False
+
+  return s
+
+## abbreviates a string.
+# first we abbreviate each word in a string (phrase)
+# then we concat them back and abbreviate the whole phrase
+def AbbrString(
+    s,
+    wordLength=6,
+    replaceList=["/", "&", " and ", "-", ",", ";"],
+    sep="-",
+    totalLength=None,
+    wordNumLimit=None):
+
+  for char in replaceList:
+    s = s.replace(char, " ")
+  sList = s.split(" ")
+  sList = [s[0:wordLength] for s in sList]
+  sList = [x for x in sList if x not in ["", " ", "  ", "    "]]
+  sList = [DropEndingVowels(s) for s in sList]
+  sList = list(collections.OrderedDict.fromkeys(sList))
+  print(sList)
+
+  if wordNumLimit is not None:
+    sList = sList[:wordNumLimit]
+
+  s = sep.join(sList)
+
+  if totalLength is not None:
+    s = s[0:totalLength]
+    s = DropEndingVowels(s)
+
+  s = DropEndingChars(s=s, chars=["/", "&", " and ", "-", sep, " ", ",", ";"])
+
+  return s
+
+"""
+s = "language books/"
+AbbrString(s, sep="-")
+"""
+## replace in pandas is slow
+def ReplaceValues_dfCols_viaReplace(
+    df, cols, values, newValues, newCols=None):
+
+  if newCols is None:
+    newCols = cols
+
+  mappingDict = dict(zip(values, newValues))
+
+  df[newCols] = df[cols].replace(mappingDict)
+  return df
+
+def ReplaceValues_dfCols(df, cols, values, newValues, newCols=None):
+
+  if newCols is None:
+    newCols = cols
+
+  m = pd.Series(newValues, values)
+  df[newCols] = df[cols].stack().map(m).unstack()
+
+  return df
+
+"""
+import datetime
+import pandas as pd
+import numpy as np
+import string
+
+
+n = 10000
+m = 500
+
+df = pd.DataFrame(
+    pd.DataFrame(
+        np.random.choice(list(string.letters), n * m * 3) \
+          .reshape(3, -1)).sum().values.reshape(n, -1))
+cols = [0, 1]
+u = np.unique(df[cols])
+fromSeries = pd.Series(u)
+toSeries = fromSeries + "XXX"
+
+fromValues = fromSeries.values
+toValues = toSeries.values
+
+a = datetime.datetime.now()
+df0 = ReplaceValues_dfCols(
+    df=df.copy(), cols=cols, values=fromValues, newValues=toValues)
+b = datetime.datetime.now()
+
+time1 = b-a
+print(time1)
+
+a = datetime.datetime.now()
+df1 = ReplaceValues_dfCols_viaReplace(
+    df=df.copy(), cols=cols, values=fromValues,
+    newValues=toValues, newCols=None)
+b = datetime.datetime.now()
+time2 = b-a
+print(time2)
+
+print(time2.total_seconds() / time1.total_seconds())
+"""
+
+def AbbrStringCols(
+    df, cols, newCols=None, wordLength=6,
+    replaceList=["/", "&", " and ", "-"], sep="-",
+    totalLength=None, wordNumLimit=None):
+
+  values = np.unique(df[cols])
+
+  def Abbr(s):
+    return AbbrString(
+        s=s, wordLength=wordLength, replaceList=replaceList,
+        sep=sep, totalLength=totalLength, wordNumLimit=wordNumLimit)
+
+  abbrValues = [Abbr(s) for s in values]
+
+  mapDf = pd.DataFrame({"value":values, "abbr_values": abbrValues})
+
+  df = ReplaceValues_dfCols(
+      df=df, cols=cols, values=values, newValues=abbrValues, newCols=newCols)
+
+  return {"df":df, "mapDf":mapDf}
+
+"""
+df = pd.DataFrame({
+    "col":["life is beautiful", "i like mountains", "ok", "cool"]})
+
+#AbbrStringCols(df, cols=["col"])
+
+AbbrStringCols(df=df, cols=["col"], totalLength=10, wordNumLimit=None)
+
+
+"""
+
+
+
+## convert data.frame to code
+
+def ConvertDf_toCode(df):
+  s = (
+      "df = pd.DataFrame( %s )"
+      % (str(df.to_dict()).replace(" nan"," float('nan')")))
+
+  return s
+
+"""
+df = pd.DataFrame({"a":[1, 2, 3], "b":[1, 2, 3]})
+ConvertDf_toCode(df)
+"""

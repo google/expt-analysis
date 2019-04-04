@@ -18,14 +18,6 @@
 # source functions for analyzing device/user profiles
 # for generic timestamped usage data
 
-
-DoNotUseArrows <- function() {
-  "this is just added to trigger syntax coloring based on <- function"
-  "we use = instead of <- as it is only one character"
-  "also it gives better readability to the code"
-}
-
-
 ## this function splits a time interval
 # specified by timeColStart, timeColEnd
 # whenever a break point happens in the middle
@@ -157,7 +149,8 @@ GetSleepTime = function(dt, userCol, timeColStart, timeColEnd) {
 
 
 ## this function processes raw data and returns a few data frames
-# dt: a processed table which is similar to raw with added columns eg hour, date
+# dt: a processed table which is similar to raw
+# with added columns eg hour, date
 # dtSplit: similar to dt but it splits the time interval to two\
 # whenever a time interval
 # crosses an hour
