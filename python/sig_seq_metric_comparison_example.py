@@ -50,14 +50,14 @@ def SimulData(subSeq):
       df=dfRaw,
       timeCol='time',
       seqDimCols=['prod'],
-      indCols=['user_id', 'date'],
+      partitionCols=['user_id', 'date'],
       timeGap=10*60,
       trim=trim,
       keepIndCols=True,
-      indColsAgg=['date'],
+      partitionColsAgg=['date'],
       condDict=None,
       initBlankValue=None,
-      lastBlankValue=None,
+      lastBlankValue=None,s
       extraCols=[],
       ordered=True)
 
@@ -133,7 +133,7 @@ DisplayResults(seqDfWithSignif)
 
 
 sliceColsAgg = ['date']
-df0 = SlicePlotSigSeq(
+df0 = Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif,
     sliceCols=sliceColsAgg,
     metricCol='relative_prob1',

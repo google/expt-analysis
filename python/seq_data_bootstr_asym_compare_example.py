@@ -24,8 +24,8 @@ these functions are not needed to perform actual analysis."""
 ## build bootstrap and asympt CI
 def TestSigSeqMethods(
     dfRaw,
-    indCols,
-    indColsAgg,
+    partitionCols,
+    partitionColsAgg,
     timeGap,
     timeCol,
     seqDimCols,
@@ -39,11 +39,11 @@ def TestSigSeqMethods(
       df=dfRaw,
       timeCol=timeCol,
       seqDimCols=seqDimCols,
-      indCols=indCols,
+      partitionCols=partitionCols,
       timeGap=timeGap,
       trim=trim,
       keepIndCols=True,
-      indColsAgg=indColsAgg,
+      partitionColsAgg=partitionColsAgg,
       condDict=None,
       initBlankValue=None,
       lastBlankValue=None,
@@ -84,7 +84,7 @@ def TestSigSeqMethods(
       seqDimCols=seqDimCols,
       Fcn=Fcn,
       trim=trim,
-      indCols=indCols,
+      partitionCols=partitionCols,
       keepIndCols=True,
       sliceCols=sliceCols,
       initBlankValue=None,
@@ -191,8 +191,8 @@ trim = 3
 
 sigDict = TestSigSeqMethods(
     dfRaw=dfRaw,
-    indCols=['user_id', 'date'],
-    indColsAgg=['date'],
+    partitionCols=['user_id', 'date'],
+    partitionColsAgg=['date'],
     timeGap=2*60,
     timeCol='time',
     seqDimCols=['prod'],
@@ -219,8 +219,8 @@ trim = 4
 
 sigDict = TestSigSeqMethods(
     dfRaw=dfRaw,
-    indCols=['user_id', 'date'],
-    indColsAgg=['date'],
+    partitionCols=['user_id', 'date'],
+    partitionColsAgg=['date'],
     timeGap=2*60,
     timeCol='time',
     seqDimCols=['prod'],

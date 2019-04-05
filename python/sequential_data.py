@@ -252,12 +252,14 @@ AddStringContainsDf(df=df, col='col', labelList=labelList, newColName=None,
 ## this adds a new column to a dataframe by inspecting a seq column
 ## if the seq is only unique elements, it will return the unique element
 ## if there are more than one elements in the seq, it returns "MIXED"
-def AddSeqUniqueOrMixed(df,
-                        seqCol,
-                        sepStr=None,
-                        newColName=None,
-                        mixedLabel='MIXED',
-                        noneLabel='None'):
+def AddSeq_uniqueOrMixed(
+    df,
+    seqCol,
+    sepStr=None,
+    newColName=None,
+    mixedLabel='MIXED',
+    noneLabel='None'):
+
   df2 = df.copy()
   df3 = df.copy()
   if sepStr is not None:
@@ -267,7 +269,7 @@ def AddSeqUniqueOrMixed(df,
   # otherwise will assign "mixed"
   def F(x):
     if len(x) == 0:
-      return(noneLabel)
+      return noneLabel
     if len(set(x)) == 1:
       return(x[0])
     return mixedLabel
@@ -286,13 +288,13 @@ df = pd.DataFrame({
   'var2': [1, 2], 'seq_count':[5, 6]
   })
 
-AddSeqUniqueOrMixed(df=df, seqCol='browser', sepStr='>')
+AddSeq_uniqueOrMixed(df=df, seqCol='browser', sepStr='>')
 '''
 
-## construct the set of all values for the respCol grouped by indCols
-def GetSetIndCols(df, respCol, indCols):
+## construct the set of all values for the respCol grouped by partitionCols
+def GetSetIndCols(df, respCol, partitionCols):
 
-  g = df.groupby(indCols)
+  g = df.groupby(partitionCols)
   out = g[respCol].apply(lambda x: list(set(list(x))))
   out = out.reset_index()
 
@@ -301,10 +303,10 @@ def GetSetIndCols(df, respCol, indCols):
 '''
 df = pd.DataFrame( {'a':['A', 'A', 'B', 'B', 'B', 'C', 'C'],
                     'b':[1, 2, 5, 5, 4, 6, 7]})
-out = GetSetIndCols(df=df, respCol='b', indCols=['a'])
+out = GetSetIndCols(df=df, respCol='b', partitionCols=['a'])
 
 df = GenUsageData(8)
-GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 '''
 
 ## returns a function which adds a ind column to setDf for each pair [pre, post]
@@ -320,7 +322,7 @@ def AddMembershipColFcn(setDf, setCol):
 '''
 df = GenUsageData(userNum=4, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
   dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 print(setDf)
 Fcn = AddMembershipColFcn(setDf=setDf, setCol='prod')
 print(Fcn('k', 'j'))
@@ -330,16 +332,16 @@ print(Fcn('a', 'b'))
 ## generates a Fcn (SubsetDfFcn) which for each given subSet:
 ## generates a function SubsetDf=SubsetDfFcn(subSet)
 ## which adds a boolean column about membership of all the elements of subSet
-def ElemsExist_subsetDfFcn(setDf, setCol, indCols):
+def ElemsExist_subsetDfFcn(setDf, setCol, partitionCols):
 
   AddPairMembership = AddMembershipColFcn(setDf=setDf, setCol=setCol)
 
   def SubsetDfFcn(subSet):
     def SubsetDf(df):
       setDf2 = AddPairMembership(subSet)
-      setDf2 = setDf2[indCols + ['elems_exist']]
-      df2 = pd.merge(df, setDf2, on=indCols)
-      df2 = df2[df2['elems_exist'] == True]
+      setDf2 = setDf2[partitionCols + ['elems_exist']]
+      df2 = pd.merge(df, setDf2, on=partitionCols)
+      df2 = df2[df2['elems_exist']]
       return df2
     return SubsetDf
 
@@ -349,11 +351,11 @@ def ElemsExist_subsetDfFcn(setDf, setCol, indCols):
 '''
 df = GenUsageData(userNum=4, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
                   dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 AddPairMembership = AddMembershipColFcn(setDf=setDf, setCol='prod')
 SubsetDfFcn = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
-indCols=['user_id'])
+partitionCols=['user_id'])
 SubsetDf = SubsetDfFcn(pair)
 
 pair = ['randomWatchApp', 'browsingFeat']
@@ -374,7 +376,7 @@ def CreateTimeSeq(
     timeCol,
     timeGap,
     timeColEnd=None,
-    indCols=[],
+    partitionCols=[],
     extraCols=[],
     ordered=False):
 
@@ -397,13 +399,13 @@ def CreateTimeSeq(
     df2 = df2[~df2.isnull().any(axis=1)].copy()
 
   if not ordered:
-    df = df.sort_values(indCols + [timeCol])
+    df = df.sort_values(partitionCols + [timeCol])
 
   ## creating a single column to keep track of inds
   df['all_ind'] = 0
   df['ind_change'] = False
-  if len(indCols) > 0:
-    df = Concat_stringColsDf(df, cols=indCols, colName='all_ind', sepStr='-')
+  if len(partitionCols) > 0:
+    df = Concat_stringColsDf(df, cols=partitionCols, colName='all_ind', sepStr='-')
     df['ind_pair'] = list(zip(df['all_ind'], df['all_ind'].shift()))
     df['ind_change'] = df['ind_pair'].map(lambda x: len(set(x))) > 1
 
@@ -441,11 +443,11 @@ def CreateTimeSeq(
   df['seq_start_timestamp'] = df[timeCol]
   df['seq_end_timestamp'] = df[timeColEnd]
 
-  df = df[indCols + respCols +
+  df = df[partitionCols + respCols +
           ['seq_start_timestamp', 'seq_end_timestamp', 'tempCol']].copy()
 
   #start = time.time()
-  g = df.groupby(indCols + ['tempCol'])
+  g = df.groupby(partitionCols + ['tempCol'])
   aggDict = {'seq_start_timestamp': min, 'seq_end_timestamp': max}
 
   for col in respCols:
@@ -471,8 +473,8 @@ respCol = 'prod'
 extraCols =['form_factor']
 timeCol = 'time'
 timeGap = 10*1
-indCols = ['user_id'] # example 1
-indCols = ['user_id', 'date'] # example 2
+partitionCols = ['user_id'] # example 1
+partitionCols = ['user_id', 'date'] # example 2
 #df['date'] = df['date'].map(str)
 
 timeColEnd = 'end_time'
@@ -483,7 +485,7 @@ seqDf1 = CreateTimeSeq(
     timeCol=timeCol,
     timeGap=timeGap,
     timeColEnd=timeColEnd,
-    indCols = indCols,
+    partitionCols = partitionCols,
     extraCols=extraCols,
     ordered=False)
 '''
@@ -537,8 +539,8 @@ respCol = 'prod'
 extraCols =['form_factor', 'country']
 timeCol = 'time'
 timeGap = 10*1
-indCols = ['user_id'] # example 1
-indCols = ['user_id', 'date'] # example 2
+partitionCols = ['user_id'] # example 1
+partitionCols = ['user_id', 'date'] # example 2
 #df['date'] = df['date'].map(str)
 
 timeColEnd = 'end_time'
@@ -549,7 +551,7 @@ seqDf1 = CreateTimeSeq(
     timeCol=timeCol,
     timeGap=timeGap,
     timeColEnd=timeColEnd,
-    indCols = indCols,
+    partitionCols = partitionCols,
     extraCols=extraCols,
     ordered=False)
 
@@ -563,7 +565,7 @@ def CreateTimeSeq_andDedupe(
     timeCol,
     timeGap,
     timeColEnd=None,
-    indCols=[],
+    partitionCols=[],
     extraCols=[],
     ordered=False,
     seqCol='seq_undeduped',
@@ -571,8 +573,8 @@ def CreateTimeSeq_andDedupe(
     parallelSuffix='_parallel',
     method='split_by_ind'):
 
-  if len(set(indCols) & set(extraCols)) > 0:
-    warnings.warn("indCols and extraCols intersect. This can cause errors.")
+  if len(set(partitionCols) & set(extraCols)) > 0:
+    warnings.warn("partitionCols and extraCols intersect. This can cause errors.")
 
   if method == 'default':
     seqDf = CreateTimeSeq(
@@ -581,7 +583,7 @@ def CreateTimeSeq_andDedupe(
         timeCol=timeCol,
         timeGap=timeGap,
         timeColEnd=timeColEnd,
-        indCols = indCols,
+        partitionCols = partitionCols,
         extraCols=extraCols,
         ordered=ordered)
 
@@ -593,18 +595,18 @@ def CreateTimeSeq_andDedupe(
             timeCol=timeCol,
             timeGap=timeGap,
             timeColEnd=timeColEnd,
-            indCols = [],
+            partitionCols = [],
             extraCols=extraCols,
             ordered=ordered)
       #Mark(out)
-      for col in indCols:
+      for col in partitionCols:
         out[col] = group[col].values[0]
       return(out)
 
-    if len(indCols) == 0:
+    if len(partitionCols) == 0:
       seqDf = CalcPerSlice(df)
     else:
-      g = df.groupby(indCols, as_index=False)
+      g = df.groupby(partitionCols, as_index=False)
       seqDf = g.apply(CalcPerSlice)
       seqDf = seqDf.reset_index(drop=True)
   else:
@@ -633,8 +635,8 @@ extraCols =['form_factor', 'country']
 timeCol = 'time'
 timeColEnd = 'end_time'
 timeGap = 10*1
-indCols = ['user_id'] # example 1
-indCols = ['user_id', 'date'] # example 2
+partitionCols = ['user_id'] # example 1
+partitionCols = ['user_id', 'date'] # example 2
 #df['date'] = df['date'].map(str)
 
 
@@ -644,7 +646,7 @@ CreateTimeSeq_andDedupe(
     timeCol,
     timeGap,
     timeColEnd=timeColEnd,
-    indCols=indCols,
+    partitionCols=partitionCols,
     extraCols=extraCols,
     ordered=False,
     dedupingSuffix='_deduped',
@@ -668,7 +670,7 @@ seqDf1 = CreateTimeSeq_andDedupe(
     timeCol='time',
     timeGap=1*60,
     timeColEnd='end_time',
-    indCols=['user_id'],
+    partitionCols=['user_id'],
     extraCols=['country'],
     ordered=True,
     dedupedColName='seq_deduped',
@@ -692,7 +694,7 @@ seqDf2 = CreateTimeSeq_andDedupe(
     timeCol='time',
     timeGap=1*60,
     timeColEnd='end_time',
-    indCols=['user_id'],
+    partitionCols=['user_id'],
     extraCols=['country'],
     ordered=True,
     dedupedColName='seq_deduped',
@@ -1069,9 +1071,9 @@ DedupeSeq(s=['a', 'a', 'b', 'b'], sepStr=None)
 # seqDimCols are the dimensions used in the sequence definition,
 # for example if seqDimCols=['prod', 'form_factor']
 # then the sequence elements look like: mailingFeat-COMP
-# indCols are the dimensions for which we slice the sequence data
-# keepIndCols specifies if we should also keep the indCols in the seq table
-# e.g. indCols=['user_id', 'date'] would insure
+# partitionCols are the dimensions for which we slice the sequence data
+# keepIndCols specifies if we should also keep the partitionCols in the seq table
+# e.g. partitionCols=['user_id', 'date'] would insure
 # that the sequences for each [user and date] are separated
 #(in different rows)
 # this only happens if keepIndCols = True
@@ -1081,7 +1083,7 @@ def CreateSeqDf(
     df,
     timeCol,
     seqDimCols,
-    indCols,
+    partitionCols,
     timeGap,
     trim,
     keepTimeCols=False,
@@ -1097,8 +1099,6 @@ def CreateSeqDf(
     method='split_by_ind',
     addResetDate_seqStartDate=True):
 
-  #assert (set(indColsAgg) <= set(indCols)),("indColsAgg must be a subset" +
-  #                                          "of indCols")
   df = df.reset_index(drop=True)
 
   #Mark(df)
@@ -1111,7 +1111,7 @@ def CreateSeqDf(
       timeCol=timeCol,
       timeGap=timeGap,
       timeColEnd=timeColEnd,
-      indCols=indCols,
+      partitionCols=partitionCols,
       extraCols=extraCols,
       ordered=ordered,
       seqCol='seq_undeduped',
@@ -1134,7 +1134,7 @@ def CreateSeqDf(
 
   ## assign seq id
   if seqIdCols is None:
-    seqIdCols = indCols
+    seqIdCols = partitionCols
 
   seqDf = Concat_stringColsDf(
       df=seqDf, cols=seqIdCols, colName='seq_id', sepStr='-')
@@ -1230,7 +1230,7 @@ def CreateSeqDf(
   ## for each extraCol (e.g. interface)
   # we check if the corresponding seq is mixed or same
   for col in extraCols:
-    seqDf = AddSeqUniqueOrMixed(
+    seqDf = AddSeq_uniqueOrMixed(
         df=seqDf,
         seqCol='trimmed_' + col + '_parallel',
         newColName='trimmed_' + col + '_parallel' + '_mix',
@@ -1262,7 +1262,7 @@ seqDf = CreateSeqDf(
     df=df,
     timeCol='time',
     seqDimCols=['prod', 'form_factor'],
-    indCols=['user_id'],
+    partitionCols=['user_id'],
     timeGap=timeGap,
     trim=trim,
     keepTimeCols=True,
@@ -1294,7 +1294,7 @@ seqDf1 = CreateSeqDf(
     df=df,
     timeCol='time',
     seqDimCols=['prod', 'form_factor'],
-    indCols=['user_id'],
+    partitionCols=['user_id'],
     timeGap=1*60,
     trim=3,
     extraCols=[],
@@ -1311,7 +1311,7 @@ seqDf2 = CreateSeqDf(
     df=df,
     timeCol='time',
     seqDimCols=['prod', 'form_factor'],
-    indCols=['user_id'],
+    partitionCols=['user_id'],
     timeGap=1*60,
     trim=3,
     extraCols=['prod', 'form_factor'],
@@ -1346,7 +1346,7 @@ seqDf = CreateSeqDf(
     df=df,
     timeCol='time',
     seqDimCols=['prod', 'form_factor'],
-    indCols=['user_id'],
+    partitionCols=['user_id'],
     timeGap=timeGap,
     trim=trim,
     keepTimeCols=True,
@@ -1361,7 +1361,7 @@ def BuildAndWriteSeqDf(
     df,
     fn,
     seqDimCols,
-    indCols,
+    partitionCols,
     timeGap,
     trim,
     timeCol,
@@ -1393,9 +1393,9 @@ def BuildAndWriteSeqDf(
   seqDimCols: these are the building blocks for the sequence elements
   for example  [form_factor, product]
 
-  indCols: these are partition columns used to partition the data.
+  partitionCols: these are partition columns used to partition the data.
   you will be able to slice by them in the sequential data generated.
-  for example indCols = [user_id, country]
+  for example partitionCols = [user_id, country]
 
   timeGap: the length of time gap (inactivity) used to break the sequences.
 
@@ -1462,7 +1462,7 @@ def BuildAndWriteSeqDf(
       df=df,
       timeCol=timeCol,
       seqDimCols=seqDimCols,
-      indCols=indCols,
+      partitionCols=partitionCols,
       timeGap=timeGap,
       trim=trim,
       keepTimeCols=keepTimeCols,

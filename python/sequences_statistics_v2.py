@@ -56,7 +56,7 @@ TODO remove trim from here, do trim=4
 def CreateSeqTab_addEventCombin(
     df,
     seqDimCols,
-    indCols0,
+    partitionCols0,
     sliceCols,
     seqPropCols,
     timeGap,
@@ -71,7 +71,7 @@ def CreateSeqTab_addEventCombin(
     fn=None,
     writePath=''):
 
-  indCols = indCols0 + sliceCols
+  partitionCols = partitionCols0 + sliceCols
   extraCols = seqPropCols
 
   ## we need to insure that seqDimCols determine seqPropCols
@@ -97,7 +97,7 @@ def CreateSeqTab_addEventCombin(
       df=df,
       timeCol=timeCol,
       seqDimCols=seqDimCols,
-      indCols=indCols,
+      partitionCols=partitionCols,
       timeGap=timeGap,
       trim=trim,
       timeColEnd=timeColEnd,
@@ -178,7 +178,7 @@ df['date'] = df['time'].dt.date
 out = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date'],
     seqPropCols=['form_factor'],
     timeGap=1*60,
@@ -194,7 +194,7 @@ out = CreateSeqTab_addEventCombin(
 '''
 
 ## takes a seq data frame, and calculates counts wrt an index
-# it calculate the metrics per slice given in indCols
+# it calculate the metrics per slice given in partitionCols
 # therefore one can aggregate further if needed
 # (and if summable i.e. no index overlap in slices)
 # sliceCols are the columns for which the totals are calculated over them:
@@ -276,7 +276,7 @@ df['date'] = df['time'].dt.date
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date'],
     seqPropCols=['form_factor'],
     timeGap=1*60,
@@ -450,7 +450,7 @@ df = Sim_depUsageData()
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date'],
     seqPropCols=['form_factor'],
     timeGap=3*60,
@@ -493,7 +493,7 @@ df = Sim_depUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date', 'country'],
     seqPropCols=['form_factor', 'start_hour'],
     timeGap=3*60,
@@ -538,7 +538,7 @@ seqDfWithSignif = AddSeqProbCiMetrics(
 
 Mark(seqDfWithSignif.sort_values(['count'], ascending=[0])[:10])
 
-SlicePlotSigSeq(
+Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif,
     sliceCols=sliceCols,
     metricCol='relative_prob2',
@@ -607,7 +607,7 @@ df = Sim_depUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date', 'country'],
     seqPropCols=['form_factor'],
     timeGap=3*60,
@@ -656,7 +656,7 @@ seqDfWithSignif2 = CalcProbMetrics_fromSummable(
 
 Mark(seqDfWithSignif2.sort_values(['count'], ascending=[0])[:10])
 
-SlicePlotSigSeq(
+Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif1,
     sliceCols=['country'],
     metricCol='relative_prob2',
@@ -671,7 +671,7 @@ SlicePlotSigSeq(
     figSize=[5, 20])
 
 map(Mark, range(10))
-SlicePlotSigSeq(
+Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif2,
     sliceCols=['country'],
     metricCol='relative_prob2',
@@ -736,7 +736,7 @@ df = Sim_depUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date', 'country'],
     seqPropCols=['form_factor', 'start_hour'],
     timeGap=3*60,
@@ -802,10 +802,11 @@ def PlotSigSeq_concatSeqAndSlices(
       sliceCols +
       [metricCol, metricColLower, metricColUpper]]
 
-  df = Concat_stringColsDf(df,
-                     cols=['seq'] + sliceCols,
-                     colName='seq_slice',
-                     sepStr='-')
+  df = Concat_stringColsDf(
+      df,
+      cols=['seq'] + sliceCols,
+      colName='seq_slice',
+      sepStr='-')
 
   ## subset the cases where at least one of the methods is sig
   df2 = df[df[metricColLower] > 1.1]
@@ -842,7 +843,7 @@ def PlotSigSeq_concatSeqAndSlices(
 ## plotting the CI from sig sequences
 # this will put confidence intervals
 # from slices side by side
-def SlicePlotSigSeq(
+def Plt_sigSeq_compareSlices(
     seqDfWithSignif,
     sliceCols=[],
     metricCol='relative_prob2',
@@ -961,7 +962,7 @@ def SlicePlotSigSeq(
 
   if saveFig:
     fn0 = figPath + figFnPrefix + '_seq_probability.' + figFnExt
-    fn = FigFnTransFcn(fn0, 'w')
+    fn = Open(fn0, 'w')
     p2.savefig(fn, bbox_inches='tight')
 
   df = df2.copy()
@@ -999,7 +1000,7 @@ def SlicePlotSigSeq(
 
     if saveFig:
       fn0 = figPath + figFnPrefix + '_user_penetration.' + figFnExt
-      fn = FigFnTransFcn(fn0, 'w')
+      fn = Open(fn0, 'w')
       p3.savefig(fn, bbox_inches='tight')
 
   df2 = df.reset_index()
@@ -1014,7 +1015,7 @@ df = Sim_depUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date', 'country'],
     seqPropCols=['form_factor'],
     timeGap=3*60,
@@ -1065,7 +1066,7 @@ seqDfWithSignif2 = CalcProbMetrics_fromSummable(
 
 out.sort_values(['count'], ascending=[0])[:10]
 
-SlicePlotSigSeq(
+Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif1,
     sliceCols=['country'],
     metricCol='relative_prob2',
@@ -1081,7 +1082,7 @@ SlicePlotSigSeq(
 
 map(Mark, range(10))
 
-SlicePlotSigSeq(
+Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif2,
     sliceCols=['country'],
     metricCol='relative_prob2',
@@ -1107,7 +1108,7 @@ df = Sim_depUsageData(userNum=100, subSeqLen=3, repeatPattern=None)
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date', 'country'],
     seqPropCols=['form_factor', 'start_hour'],
     timeGap=3*60,
@@ -1153,7 +1154,7 @@ seqDfWithSignif2 = FindSigSeq_withPenet(
     penetItemCols=None,
     seqCountMin=5)
 
-out = SlicePlotSigSeq(
+out = Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif2,
     sliceCols=sliceCols,
     metricCol='relative_prob2',
@@ -1240,7 +1241,7 @@ def Gen_seqData_FnTableNames(
 def WriteSeqTable_forSql(
     df,
     seqDimCols,
-    indCols0,
+    partitionCols0,
     sliceCols,
     seqPropCols,
     timeGapMin,
@@ -1294,7 +1295,7 @@ def WriteSeqTable_forSql(
   seqDf = CreateSeqTab_addEventCombin(
     df=df,
     seqDimCols=seqDimCols,
-    indCols0=indCols0,
+    partitionCols0=partitionCols0,
     sliceCols=sliceCols,
     seqPropCols=seqPropCols,
     timeGap=timeGap,
@@ -1372,7 +1373,8 @@ def WriteSeqTable_forSql(
       'fn':fn, 'sqlTableName':sqlTableName, 'sqlStr':sqlStr, 'seqDf':seqDf}
 
 ## write sig seq results to appropriate place
-def WriteSigSeqDf(sigDf, sqlTableName, path, regDict, condDict):
+def Write_sigSeqDf(
+    sigDf, sqlTableName, path, regDict, condDict):
 
   for col in ['level_0',  'index']:
     if col in sigDf.columns:

@@ -21,14 +21,16 @@
 # (e.g. a probability or odds)
 # for each given input (usually a seq s) using a seq data frame
 # this function uses the count column to exaggerate
-def SeqDomainedFcn(df,
-                   seqCol,
-                   fcnDict,
-                   Compose=None,
-                   seqCountCol=None,
-                   SubsetDfFcn=None,
-                   sepStr=None,
-                   seqLengthMin=1):
+def SeqDomainedFcn(
+    df,
+    seqCol,
+    fcnDict,
+    Compose=None,
+    seqCountCol=None,
+    SubsetDfFcn=None,
+    sepStr=None,
+    seqLengthMin=1):
+
   if Compose == None:
     def Compose(u):
       return(u)
@@ -53,9 +55,9 @@ def SeqDomainedFcn(df,
         np.array(df3[seqCountCol].values))
       valueDict[key] = vec.sum()
     out = Compose(valueDict)
-    return(out)
+    return out
 
-  return(Out)
+  return Out
 
 ## takes sequence data, turns it to sequences of length two
 # (x1=Entry app, x2=Used app) only if needed
@@ -76,18 +78,18 @@ def SeqTransOddsFcn(df,
       warnings.warn('Warning: length of x was less than 3. BothFcn Err.')
       def F(l):
         return(False)
-      return(F)
+      return F
     def F(l):
       if len(l) < 2:
         return(False)
       return(x[0:2] == l[0:2])
-    return (F)
+    return F
 
   def PreFcn(x):
     x = x.split(sepStr)
     def F(l):
-      return(x[0] == l[0])
-    return (F)
+      return x[0] == l[0]
+    return F
 
   def PostFcn(x):
     x = x.split(sepStr)
@@ -99,8 +101,8 @@ def SeqTransOddsFcn(df,
     def F(l):
       if len(l) < 2:
         return(False)
-      return (x[1] == l[1])
-    return (F)
+      return x[1] == l[1]
+    return F
 
   def SsFcn(x):
     def F(l):
@@ -134,16 +136,16 @@ def SeqTransOddsFcn(df,
 df = GenUsageData(userNum=50, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
   dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
 
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 ElemsExists = AddMembershipColFcn(setDf=setDf, setCol='prod')
 SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
-indCols=['user_id'])
+partitionCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 #Mark(SubsetDfFcn('>'.join(pair))(df=df)['user_id'].value_counts())
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=2*60, trim=5, keepIndCols=True, ordered=False)
 seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
 GetOdds = SeqTransOddsFcn(df=seqDf.copy(), seqCol='seq',
@@ -182,20 +184,20 @@ def SeqTripleOddsFcn(df,
     if len(x) < 3:
       warnings.warn('Warning: len(x) less than 3, in SeqTripleOddsFcn')
       def F(l):
-        return(False)
-      return(F)
+        return False
+      return F
 
     def F(l):
       if len(l) < 3:
         return False
-      return (x[0:3] == l[0:3])
+      return x[0:3] == l[0:3]
     return F
 
   def FirstMatchFcn(x):
     x = x.split(sepStr)
     def F(l):
-      return (x[0] == l[0])
-    return (F)
+      return x[0] == l[0]
+    return F
 
   def SecMatchFcn(x):
     x = x.split(sepStr)
@@ -207,8 +209,8 @@ def SeqTripleOddsFcn(df,
     def F(l):
       if len(l) < 2:
         return False
-      return (x[1] == l[1])
-    return (F)
+      return x[1] == l[1]
+    return F
 
   def ThirdMatchFcn(x):
     x = x.split(sepStr)
@@ -221,7 +223,7 @@ def SeqTripleOddsFcn(df,
       if len(l) < 3:
         return False
       return x[2] == l[2]
-    return (F)
+    return F
 
   def SsFcn(x):
     def F(l):
@@ -251,22 +253,23 @@ def SeqTripleOddsFcn(df,
       SubsetDfFcn=SubsetDfFcn,
       sepStr=sepStr,
       seqLengthMin=seqLengthMin)
+
   return Out
 
 '''
 df = GenUsageData(userNum=100, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
   dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
 
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 ElemsExists = AddMembershipColFcn(setDf=setDf, setCol='prod')
 SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
-indCols=['user_id'])
+partitionCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 #Mark(SubsetDfFcn('>'.join(pair))(df=df)['user_id'].value_counts())
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=2*60, trim=5, keepIndCols=True, ordered=False)
 
 seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
@@ -288,12 +291,14 @@ H('editingFeat>randomWatchApp>editingFeat')
 H('randomWatchApp>editingFeat>randomWatchApp')
 '''
 
-def SeqQuadOddsFcn(df,
-                   seqCol,
-                   seqCountCol=None,
-                   SubsetDfFcn=None,
-                   sepStr=None,
-                   seqLengthMin=4):
+def SeqQuadOddsFcn(
+    df,
+    seqCol,
+    seqCountCol=None,
+    SubsetDfFcn=None,
+    sepStr=None,
+    seqLengthMin=4):
+
 
   def QuadMatchFcn(x):
     x = x.split(sepStr)
@@ -306,7 +311,7 @@ def SeqQuadOddsFcn(df,
     def F(l):
       if len(l) < 4:
         return(False)
-      return (x[0:4] == l[0:4])
+      return x[0:4] == l[0:4]
     return F
 
   def FirstMatchFcn(x):
@@ -325,7 +330,7 @@ def SeqQuadOddsFcn(df,
     def F(l):
       if len(l) < 2:
         return False
-      return (x[1] == l[1])
+      return x[1] == l[1]
     return F
 
   def ThirdMatchFcn(x):
@@ -338,7 +343,7 @@ def SeqQuadOddsFcn(df,
     def F(l):
       if len(l) < 3:
         return False
-      return (x[2] == l[2])
+      return x[2] == l[2]
     return F
 
   def FourthMatchFcn(x):
@@ -351,7 +356,7 @@ def SeqQuadOddsFcn(df,
     def F(l):
       if len(l) < 4:
         return False
-      return (x[3] == l[3])
+      return x[3] == l[3]
     return F
 
   def SsFcn(x):
@@ -384,21 +389,22 @@ def SeqQuadOddsFcn(df,
       SubsetDfFcn=SubsetDfFcn,
       sepStr=sepStr,
       seqLengthMin=seqLengthMin)
+
   return Out
 
 '''
 df = GenUsageData(userNum=200, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
              dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
 
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 ElemsExists = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', indCols=['user_id'])
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', partitionCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 #Mark(SubsetDfFcn('>'.join(pair))(df=df)['user_id'].value_counts())
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=3*60, trim=4, keepIndCols=True, ordered=False)
 
 seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=4, sepStr='>')
@@ -474,6 +480,7 @@ def SeqConfIntDf(df,
   seqSet = outDf[seqCol].values
 
   def ValuesDf(df):
+
     G = Fcn(
         df=df,
         seqCol=seqCol,
@@ -482,6 +489,7 @@ def SeqConfIntDf(df,
         sepStr=sepStr,
         seqLengthMin=seqLengthMin)
     values = [G(x) for x in seqSet]
+
     return values
 
   values = ValuesDf(df2)
@@ -546,11 +554,11 @@ SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn, seqCountCol=None,
 ## Example 2
 df = GenUsageData(userNum=8, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
              dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
 SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
-                                     indCols=['user_id'])
+                                     partitionCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
@@ -559,7 +567,7 @@ pair = [browsingFeat, 'randomWatchApp']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(subSet=pair)(df)['user_id'].value_counts())
 
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
   timeCol='time', timeGap=2*60, trim=2, keepIndCols=True, ordered=False)
 seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
 out1 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
@@ -575,12 +583,12 @@ out2 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
 df = GenUsageData(userNum=10, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
              dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
 
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
 
 SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
-                                     indCols=['user_id'])
+                                     partitionCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
@@ -589,7 +597,7 @@ pair = [browsingFeat, 'randomWatchApp']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(pair)(df)['user_id'].value_counts())
 
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
                                timeCol='time', timeGap=2*60, trim=2,
                                keepIndCols=True, ordered=False)
 seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
@@ -632,7 +640,7 @@ def SeqSigValueDf(df,
                   seqDimCols,
                   Fcn,
                   trim,
-                  indCols=[],
+                  partitionCols=[],
                   sliceCols=[],
                   checkElemsExist=False,
                   condDict=None,
@@ -653,7 +661,7 @@ def SeqSigValueDf(df,
       df=df,
       timeCol=timeCol,
       seqDimCols=seqDimCols,
-      indCols=indCols,
+      partitionCols=partitionCols,
       timeGap=timeGap,
       trim=trim,
       ordered=ordered)
@@ -673,14 +681,16 @@ def SeqSigValueDf(df,
   for i in range(1, seqLengthMin):
     seqTabDf['seq'] = seqTabDf['seq'] + '>' + seqTabDf[eventCols[i]]
 
-  ## we check if the pair exists for the indCols
+  ## we check if the pair exists for the partitionCols
   SubsetDfFcn = None
 
   if checkElemsExist:
-    setDf = GetSetIndCols(df=df, respCol='-'.join(seqDimCols), indCols=indCols)
-    SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf,
-                                         setCol='-'.join(seqDimCols),
-                                         indCols=indCols)
+    setDf = GetSetIndCols(
+        df=df, respCol='-'.join(seqDimCols), partitionCols=partitionCols)
+    SubsetDfFcn0 = ElemsExist_subsetDfFcn(
+        setDf=setDf,
+       setCol='-'.join(seqDimCols),
+       partitionCols=partitionCols)
     def SubsetDfFcn(x):
       l = x.split('>')
       return(SubsetDfFcn0(l))
@@ -757,17 +767,17 @@ def SeqSigValueDf(df,
 df = GenUsageData(userNum=10, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
              dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
 
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
-SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', indCols=['user_id'])
+SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', partitionCols=['user_id'])
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 pair = [browsingFeat, 'randomWatchApp']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(pair)(df)['user_id'].value_counts())
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
                                timeCol='time', timeGap=2*60, trim=2,
                                keepIndCols=True, ordered=False)
 seqDf = ShiftedSeqDf(df=seqDf, seqCol='seq', k=3, sepStr='>')
@@ -797,7 +807,7 @@ plt.scatter(compareDf['value_x'], compareDf['value_y'])
 
 
 sigDf = SeqSigValueDf(df=df, timeCol='time', timeGap=2*60, seqDimCols=['prod'],
-                      Fcn=Fcn, trim=2, indCols=['user_id'], keepIndCols=False,
+                      Fcn=Fcn, trim=2, partitionCols=['user_id'], keepIndCols=False,
                       initBlankValue=None, lastBlankValue=None,
                       checkElemsExist=False, condDict=None, lowerThresh=1.25,
                       upperThresh=0.8, valueColName='value', TransDfList=None,
@@ -811,12 +821,12 @@ sigDf = SeqSigValueDf(df=df, timeCol='time', timeGap=2*60, seqDimCols=['prod'],
 df = GenUsageData(userNum=200, dt1=datetime.datetime(2017, 4, 12, 0, 0, 0),
              dt2=datetime.datetime(2017, 4, 12, 1, 0, 0))
 
-setDf = GetSetIndCols(df=df, respCol='prod', indCols=['user_id'])
+setDf = GetSetIndCols(df=df, respCol='prod', partitionCols=['user_id'])
 #print(setDf)
 AddMembershipCol = AddMembershipColFcn(setDf=setDf, setCol='prod')
 
 SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
-                                     indCols=['user_id'])
+                                     partitionCols=['user_id'])
 
 def SubsetDfFcn(x):
   l = x.split('>')
@@ -826,7 +836,7 @@ basket = [browsingFeat, 'randomWatchApp', 'exploreFeat', 'editingFeat']
 Mark(AddMembershipCol(basket))
 Mark(SubsetDfFcn0(basket)(df)['user_id'].value_counts())
 
-seqDf = CreateSeqTableContains(df=df, indCols=['user_id'], respCol='prod',
+seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
                                timeCol='time', timeGap=2*60, trim=None,
                                keepIndCols=True, ordered=False)
 
@@ -872,7 +882,7 @@ compareDf = pd.merge(out1, out2, on=['seq'], how='outer')
 plt.scatter(compareDf['value_x'], compareDf['value_y'])
 
 sigDf = SeqSigValueDf(df=df, timeCol='time', timeGap=2*60, seqDimCols=['prod'],
-                      Fcn=Fcn, trim=4, indCols=['user_id'],
+                      Fcn=Fcn, trim=4, partitionCols=['user_id'],
                       keepIndCols=False, initBlankValue=None,
                       lastBlankValue=None, checkElemsExist=False, condDict=None,
                       lowerThresh=1.25, upperThresh=0.8, valueColName='value',

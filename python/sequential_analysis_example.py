@@ -82,9 +82,9 @@ same as timeCol
 seqDimCols: these are the building blocks for the sequence elements
 for example  [form_factor, product]
 
-indCols: these are partition columns used to partition the data.
+partitionCols: these are partition columns used to partition the data.
 you will be able to slice by them in the sequential data generated.
-for example indCols = [user_id, country]
+for example partitionCols = [user_id, country]
 
 timeGap: the length of time gap (inactivity) used to break the sequences.
 
@@ -157,7 +157,7 @@ timeColEnd = 'end_time'
 timeGap = 2*60
 # make sure user_id column is a string column
 df['user_id'] = df['user_id'].map(ShortHash)
-indCols = ['user_id', 'country']
+partitionCols = ['user_id', 'country']
 seqDimCols = ['prod', 'form_factor']
 seqPropCols = ['prod', 'form_factor']
 seqPropColsDeduped = seqPropCols
@@ -168,7 +168,7 @@ seqDf = BuildAndWriteSeqDf(
   df=df,
   fn=outputFileName,
   seqDimCols=seqDimCols,
-  indCols=indCols,
+  partitionCols=partitionCols,
   timeGap=timeGap,
   trim=trim,
   timeCol=timeCol,

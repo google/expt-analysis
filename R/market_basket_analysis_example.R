@@ -16,9 +16,6 @@
 # author: Reza Hosseini
 
 codePath = ""
-codePath = paste0(
-    "/google/src/cloud/rezani/cp1/google3/experimental/users/rezani/",
-    "codes/expt-analysis/R/")
 
 source(paste0(codePath, "data_analysis.R"))
 source(paste0(codePath, "clustering.R"))
@@ -28,18 +25,19 @@ source(paste0(codePath, "market_basket_analysis.R"))
 library("arules")
 library("data.table")
 
-n = 5
+n = 100
 df = data.frame(
     "id"=rep("", n),
     "date"=rep("", n),
     "full_seq_basket"=rep("", n),
     stringsAsFactors=FALSE)
 
-df[1, ] =  list("F_3qGuHsw",  "2019-02-23",  "a;b;c")
-df[2, ] =  list("G2CXtn3zk",  "2019-02-02",  "c;d;e")
-df[3, ] =  list("L7nkvoEik",  "2019-02-05",  "e;f;g")
-df[4, ] =  list("LyebHtPg4",  "2019-02-06",  "f;d;h")
-df[5, ] =  list("LyebHtPg4",  "2019-02-16",  "a;b;c;d")
+baskets = c("c;d;e", "e;f;g", "f;d;h", "a;b;c;d")
+dates = c("2019-02-23", "2019-02-24", "2019-02-25")
+
+for (i in 1:n) {
+    df[i, ] =  list(i,  sample(dates, 1),  sample(baskets, 1))
+}
 
 
 res = Find_sigBaskets_fromSeqData(

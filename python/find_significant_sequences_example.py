@@ -68,6 +68,12 @@ for fn in srcFns: exec(GetContent(fn=fn))
 sqlTablesLogFile = '~/data/seq_data/seq_data_info.csv'
 writePath = '~/data/seq_data/'
 
+## define a figs path
+figsPath = '~/data/seq_data/figs/'
+
+## define a write path for writing results tables
+writePath = '~/data/seq_data/tables/'
+
 # Example with simulated data demo purpose:
 
 ## step 1: simulate usage data
@@ -84,7 +90,7 @@ condDict = None
 out = WriteSeqTable_forSql(
     df=df,
     seqDimCols=['prod', 'form_factor'],
-    indCols0=['user_id'],
+    partitionCols0=['user_id'],
     sliceCols=['date', 'country'],
     seqPropCols=['form_factor'],
     timeGapMin=5,
@@ -176,9 +182,8 @@ seqDfWithSignif = AddSeqProbCiMetrics(
     sliceCols=sliceCols,
     auxSliceCols=auxSliceCols,
     seqCol='seq',
-    countDistinctCols=['seq_id'],
+    countDistinctCols=countDistinctCols,
     seqCountMin=3)
-
 
 ## also calculate penetration:
 # need to pass penetItemCols to do that
@@ -197,12 +202,15 @@ condDict = {
     #'trimmed_form_factor_parallel_mix':['COMP']
 }
 
+## a set of values to be regex
+regDict = {}
+
 
 plt.figure()
 Mark(text="SIG PLOTS + PENETRATION PLOT", color='blue', bold=True)
 
 
-sigDf = SlicePlotSigSeq(
+sigDf = Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif2.copy(),
     sliceCols=sliceCols,
     condDict=condDict,
@@ -216,4 +224,24 @@ sigDf = SlicePlotSigSeq(
     seqNumLimit = None,
     rotation=0,
     logScale=True,
-    figSize=[8, 8])
+    figSize=[8, 8],
+    saveFig=True,
+    figPath=figsPath,
+    figFnPrefix=sqlTableName.replace('.', '_'),
+    figFnExt='png')
+
+
+sigDf = sigDict['df']
+if sigDf is not None:
+  Mark(x=sigDf.shape, text="sigDf.shape:", color="green", bold=True)
+  Mark(x=sigDf[:6], text="sigDf snapshot:", color="blue", bold=True)
+else:
+  Mark(text='no data was found', color='red')
+
+if sigDf is not None:
+    Write_sigSeqDf(
+        sigDf=sigDf,
+        sqlTableName=sqlTableName,
+        path=writePath,
+        regDict=regDict,
+        condDict=condDict)

@@ -15,9 +15,11 @@
 
 # author: Reza Hosseini
 
-source("data_analysis.R")
-source("clustering.R")
-source("plotting.R")
+codePath = ""
+
+source(paste0(codePath, "data_analysis.R"))
+source(paste0(codePath, "clustering.R"))
+source(paste0(codePath, "plotting.R"))
 
 #@title simulate data and test the main function
 varNum = 8 # param
