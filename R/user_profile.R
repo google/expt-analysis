@@ -94,7 +94,7 @@ TestSplitUsageTime_atBreakPoints = function() {
       timeRounding="hours", durCol=NULL)
 }
 
-## calculates a sleep time for each user/device
+## generic function which calculates a sleep time for each user/device/unit
 # it finds top k largest timegaps between the end time (timeColEnd) of a usage
 # and the start time of the next usage
 # then it takes the median
@@ -147,6 +147,25 @@ GetSleepTime = function(dt, userCol, timeColStart, timeColEnd) {
       "negGapPercent"=negGapPercent))
 }
 
+## it is possible sleep hours are not consecutive
+# we make them consecutive
+Continuous_sleepHours = function(sleepHours, numSleepHours) {
+  hours = 0:23
+  sleepHours_midPoint = round(mean(sleepHours))
+  distVec = abs(hours - sleepHours_midPoint)
+  thresh = sort(distVec)[numSleepHours]
+  ind = which(distVec <= thresh)
+  sleepHours_continuous = hours[ind][1:numSleepHours]
+  return(sleepHours_continuous)
+}
+
+TestContinuous_sleepHours = function() {
+
+  Continuous_sleepHours(
+    sleepHours=1:6, numSleepHours=6)
+  Continuous_sleepHours(
+    sleepHours=c(1, 3, 4, 5, 8, 10), numSleepHours=6)
+}
 
 ## this function processes raw data and returns a few data frames
 # dt: a processed table which is similar to raw

@@ -21,11 +21,11 @@ it includes some plotting functions
 """
 
 ###############  PART 0: Generic all purpose python functions
-## this prints an object and mark it
-# good for debugging
 def Mark(
     x=None, text='', color='',
     bold=True, underline=False):
+  """ This function prints an object x and adds a description text.
+      It is useful for for debugging. """
 
   start = ''
   end = ''
@@ -65,9 +65,11 @@ OpenFile = open
 ListDir = os.listdir
 
 
-## this functions prints x and
-# Also saves x in a file if fn is not None
 def CustomMarkFcn(fn=None, logTime=True, color=''):
+
+  """ This functions returns a custom function which prints x,
+      with description text.
+      It also saves x in a file if fn is not None. """
 
   fileExists = False
   if fn != None:
@@ -110,12 +112,13 @@ PrintFcnContent = inspect.getsourcelines
 #def MapDict(f, dic):
 #  return dict(map(lambda (k,v): (k, f(v)), dic.iteritems()))
 
-## bitwise OR: same as BIT_OR in GOOGLESQL
 def BitOr(x):
+  """bitwise OR: same as BIT_OR in SQL."""
   return functools.reduce(lambda a,b: (a|b), x)
 
-## builds a function for rounding up to n number of significant digits
+
 def Signif(n):
+  """ Builds a function for rounding up to n number of significant digits."""
 
   def F(x):
     if math.isnan(x):
@@ -173,7 +176,8 @@ def WriteCsv(
 
   if printLog:
     print(fn + ' was written.')
-  return(None)
+
+  return None
 
 
 ## reads multiple data files according to a pattern given.
@@ -389,11 +393,11 @@ def GenUsageDf_forTesting():
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:16:00',
                      '2017-04-12 00:17:09', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base',  '2017-04-12', '2017-04-12 00:18:00',
-                     '2017-04-12 00:18:30', browsingFeat, 'COMP']
+                     '2017-04-12 00:18:30', 'browsingFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:20:00',
                      '2017-04-12 00:21:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:22:00',
-                     '2017-04-12 00:22:00', browsingFeat, 'PHN']
+                     '2017-04-12 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:03:00',
                      '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['JP', '1', 'base', '2017-04-12', '2017-04-12 00:04:01',
@@ -413,7 +417,7 @@ def GenUsageDf_forTesting():
   df.loc[len(df)] = ['JP', '3', 'test', '2017-04-12', '2017-04-12 00:19:00',
                      '2017-04-12 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '3', 'test', '2017-04-12', '2017-04-12 00:20:20',
-                     '2017-04-12 00:22:00', browsingFeat, 'PHN']
+                     '2017-04-12 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:03:10',
                      '2017-04-14 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['US', '4', 'test', '2017-04-14', '2017-04-14 00:04:10',
@@ -441,7 +445,7 @@ def GenUsageDf_forTesting():
   df.loc[len(df)] = ['JP', '6', 'test', '2017-04-14', '2017-04-14 00:19:10',
                      '2017-04-14 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '6', 'test', '2017-04-14', '2017-04-14 00:20:11',
-                     '2017-04-14 00:22:00', browsingFeat, 'PHN']
+                     '2017-04-14 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:14:11',
                      '2017-04-15 00:14:10', 'photoFeat', 'COMP']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:14:22',
@@ -449,7 +453,7 @@ def GenUsageDf_forTesting():
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:19:57',
                      '2017-04-15 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['JP', '7', 'base', '2017-04-15', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', browsingFeat, 'PHN']
+                     '2017-04-15 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:03:00',
                      '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['FR', '8', 'base', '2017-04-12', '2017-04-12 00:04:01',
@@ -467,11 +471,11 @@ def GenUsageDf_forTesting():
   df.loc[len(df)] = ['FR', '9', 'test', '2017-04-15', '2017-04-15 00:19:57',
                      '2017-04-15 00:20:00', 'locFeat', 'COMP']
   df.loc[len(df)] = ['FR', '9', 'test', '2017-04-15', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', browsingFeat, 'PHN']
+                     '2017-04-15 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['NG', '10', 'test', '2017-04-16', '2017-04-15 00:21:56',
                      '2017-04-15 00:22:00', 'StorageFeat', 'PHN']
   df.loc[len(df)] = ['IR', '11', 'test', '2017-04-12', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', browsingFeat, 'PHN']
+                     '2017-04-15 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['IR', '12', 'base', '2017-04-16', '2017-04-15 00:21:56',
                      '2017-04-15 00:22:00', 'randomWatchApp', 'PHN']
   df.loc[len(df)] = ['IR', '13', 'base', '2017-04-12', '2017-04-12 00:03:00',
@@ -593,9 +597,9 @@ print(reg)
 print(pd.Series(['cat-dog', ' cat hates dog ', 'tiger']).str.contains(reg))
 '''
 
-## rehashing the sensitive a column (col)
-## the input is a dictionary of data frames with that column
-## we make sure the rehashing is fixed across data frames
+## rehashing a column (col)
+# the input is a dictionary of data frames with that column
+# we make sure the rehashing is fixed across data frames
 def RehashColDfDict(dfDict, col, newCol=None, omitCol=False):
 
   if newCol == None:
@@ -855,7 +859,7 @@ def CombinFreqDf(df, cols=None, countColName='cnt', propColName='prop (%)'):
   if cols == None:
     cols = list(df.columns)
 
-  if (len(cols) < 2):
+  if len(cols) < 2:
     cols.append('dummy')
     df['dummy'] = 'NA'
 
@@ -864,7 +868,7 @@ def CombinFreqDf(df, cols=None, countColName='cnt', propColName='prop (%)'):
   outDf[propColName] = 100.0 * outDf[countColName] / outDf[countColName].sum()
   outDf = outDf.sort_values([countColName], ascending=[0])
 
-  if ('dummy' in cols):
+  if 'dummy' in cols:
     del outDf['dummy']
   outDf = outDf.reset_index(drop=True)
 
@@ -945,7 +949,7 @@ def CalcFreqTablePerCateg(df, categCol, valueCol):
   def AggFcnBuild(categValue):
     def F(x):
       return sum(x == categValue)/(1.0)
-    return(F)
+    return F
 
   df = df.fillna('NA')
   labels = list(set(df[valueCol]))
@@ -964,9 +968,9 @@ def CalcFreqTablePerCateg(df, categCol, valueCol):
     dfAgg1 = G(value)
     dfAgg = pd.merge(dfAgg, dfAgg1, how='left', on=[categCol])
   dfAgg.columns = [categCol] + labels
-  outDict = {'df': dfAgg, 'labels': labels}
 
-  return outDict
+  return {'df': dfAgg, 'labels': labels}
+
 
 '''
 size = 20
@@ -1023,7 +1027,7 @@ Concat_stringColsDf(df=df, cols=['a', 'b', 'c'], colName=None, sepStr='-')
 '''
 
 ## flatten a column (listCol) of df with multiple values
-def FlattenDfRepField(df, listCol, sep=None):
+def Flatten_RepField(df, listCol, sep=None):
 
   if sep != None:
     df = df.assign(**{listCol: df[listCol].str.split(',')})
@@ -1038,7 +1042,7 @@ def FlattenDfRepField(df, listCol, sep=None):
 '''
 df = pd.DataFrame({'var1': ['a,b,c', 'd,e,f'], 'var2': [1, 2], 'var3':[5, 6]})
 print(df)
-FlattenDfRepField(df, listCol='var1', sep=',')
+Flatten_RepField(df, listCol='var1', sep=',')
 '''
 
 ### tables p-value
@@ -1162,10 +1166,48 @@ def BarPlotMultiple(df, xCol, yCols, rotation=45, pltTitle=''):
     plt.bar(x1, df[col], color=colorList[i], alpha=0.6, label=col)
 
   locs, labels = plt.xticks()
-  plt.xticks(x1, df[xCol], rotation='vertical')
+  plt.xticks(x1, df[xCol], rotation=rotation)
   plt.setp(labels, rotation=rotation, fontsize=10)
   plt.title(pltTitle + ': ' + xCol)
   plt.legend()
+
+
+def Plt_compareFreq(
+    df, labelCol, compareCol=None, rotation=90,
+    pltTitle='', compareOrder=None, limitNum=None):
+
+  if compareCol is None:
+    combinDf = CombinFreqDf(df[labelCol])
+  else:
+    combinDf = CombinFreqDf(df[[labelCol, compareCol]])
+    hue = compareCol
+
+
+  if limitNum is not None:
+    combinDf = combinDf[:limitNum]
+
+  if compareOrder is not None:
+    hue_order = compareOrder
+
+  if compareCol is None:
+    sns.barplot(data=combinDf, x=labelCol, y="prop (%)")
+    locs, labels = plt.xticks()
+    out = plt.setp(labels, rotation=rotation, fontsize=10)
+  else:
+    sns.barplot(data=combinDf, x=labelCol, hue=hue, y="prop (%)")
+    locs, labels = plt.xticks()
+    out = plt.setp(labels, rotation=rotation, fontsize=10)
+
+  return combinDf
+
+"""
+df = pd.DataFrame({
+    "label":["cat", "dog", "cat", "dog", "dog", "cat", "cat", "dog"],
+    "gender":["M", "F", "M", "F", "F", "F", "F", "M"]})
+
+Plt_compareFreq(
+    df=df, labelCol="label", compareCol="gender")
+"""
 
 ## make a boxplot for multiple columns Side by Side (Sbs, include mean with a star
 def BoxPlotDfColsSbS(df, cols=None, pltTitle='', xlab='', ylab='value',
@@ -1265,7 +1307,7 @@ CustomSortDf(df=df, col=col, orderedValues=orderedValues)
 
 ## it plots all columns wrt index
 # it uses colors to compare them side by side.
-def PlotColumnsWrtIndex(
+def PltCols_wrtIndex(
     df, cols=None, categCol=None, pltTitle='', ymin=None,
     ymax=None, yLabel='', xLabel='', colorList=None,
     orderedValues=None, alphaList=None, sciNotation=False,
@@ -1399,7 +1441,7 @@ df = pd.DataFrame({
 
 orderedValues = ["c", "a", "b", "d", "f", "e"]
 
-PlotColumnsWrtIndex(
+PltCols_wrtIndex(
     df=df,
     cols=['col1', 'col2', 'col3', 'col4'],
     categCol='categ',
@@ -1476,7 +1518,7 @@ def PivotPlotWrt(
   if cols is None:
     cols = list(set(df[compareCol].values))
 
-  p = PlotColumnsWrtIndex(
+  p = PltCols_wrtIndex(
       df=dfPivot,
       cols=cols,
       categCol=pivotIndCol,
@@ -1827,7 +1869,7 @@ def LabelDistbn_acrossSlice(
   p = None
 
   if pltIt:
-    p = PlotColumnsWrtIndex(
+    p = PltCols_wrtIndex(
       df=horizDf,
       cols=[str(x) + '_prop (%)' for x in slices],
       categCol=labelCol,
@@ -1937,7 +1979,7 @@ def LabelDistbn_perSlice(
     horizDf[l + '_%'] = 100 * (horizDf[l + '_cnt'] / horizDf['total_cnt'])
 
   if pltIt:
-    p = PlotColumnsWrtIndex(
+    p = PltCols_wrtIndex(
       df=horizDf,
       cols=[str(x) + '_%' for x in labels],
       categCol=sliceCol,

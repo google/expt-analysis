@@ -189,11 +189,12 @@ def Build_datetimeStr(df, timeCol='timestamp'):
 
 	return dt
 
-## segment the data with respect to a variable such as week
+## segment the df with respect to a variable such as week
 ## the segment variable: groupCol
 ## the within variable order: elementCol
 ## we fill NA in place of missing elements
-def DfGroup_elementFill(df, valCol='value', groupColName='group',
+def DfGroup_elementFill(
+    df, valCol='value', groupColName='group',
     elementColName='element', naFill=None):
 
   groupCol = df[groupColName]
@@ -287,11 +288,10 @@ def TimeSeries_AddTimeInfo(dt):
       'woy':woy,'monthDay':monthDay, 'isWeekend':isWeekend,
       'str_weekDay':str_weekDay}
 
-  timeDict = pd.DataFrame(timeDict)
+  return pd.DataFrame(timeDict)
 
-  return timeDict
 
-### Add flag to temporal data
+### Add flag to temporal df
 def TimeSeries_addFlag(dt, flagData, timeCol='date', flagCol='event',
 
   flagText=['Yes','No'], flagBinary='flagBinary', dateFormat='%Y-%m-%d'):
@@ -343,57 +343,61 @@ def BuildLagDf(y, r, colName=''):
 def ModR2(yPred, yValid, mean=None, yTrain=[], p=2):
 
   if len(yTrain) > 0 and mean == None:
-      mean = yTrain.mean()
+    mean = yTrain.mean()
   elif mean == None:
-      mean = yValid.mean()
-  E = (np.array(yPred)-np.array(yValid))
-  E = pd.Series(E)
-  Eclean = E[~E.isnull()]
+    mean = yValid.mean()
 
-  if len(Eclean) < len(E):
+  e = np.array(yPred) - np.array(yValid)
+  e = pd.Series(e)
+  e_cleaned = e[~e.isnull()]
+
+  if len(e_cleaned) < len(e):
     print('Warning: some Nans in the pred')
     print('length of data:' + str(len(yValid)))
     print('length of Error vector after removing Nans:' + str(len(Eclean)))
-  SSres = sum(abs(Eclean)**p)
-  SStot = sum(abs(yValid-mean)**p)
+  SSres = sum(abs(e_cleaned)**p)
+  SStot = sum(abs(yValid - mean)**p)
 
   R2 = None
   if SStot > 0:
-      R2 = 1 - (SSres/SStot)
+      R2 = 1 - (SSres / SStot)
 
   return R2
 
 def AssessContiPred(yPred, yValid):
 
-  R2 = ModR2(yPred=yPred, yValid=yValid, mean=None, yTrain=[])
-  E = np.array(yPred)-np.array(yValid)
-  E = pd.Series(E)
-  Eclean = E[~E.isnull()]
+  r2 = ModR2(yPred=yPred, yValid=yValid, mean=None, yTrain=[])
+  e = np.array(yPred) - np.array(yValid)
+  e = pd.Series(e)
+  Eclean = e[~e.isnull()]
 
-  if len(Eclean) < len(E):
+  if len(e_cleaned) < len(e):
     print('Warning: some Nans in the pred')
     print('length of data:' + str(len(yValid)))
-    print('length of Error vector after removing Nans:' + str(len(Eclean)))
+    print('length of Error vector after removing Nans:' + str(len(e_cleaned)))
 
-  AE =  abs(E)
-  ME = E.mean()
-  E25 = pd.Series(E).quantile(0.25)
-  E50 = pd.Series(E).quantile(0.50)
-  E75 = pd.Series(E).quantile(0.75)
-  MAE = AE.mean()
-  SE = E**2
-  MSE = SE.mean()
-  VAE = AE.var()
-  VSE = SE.var()
-  AE95 = pd.Series(AE).quantile(0.95)
-  AE05 = pd.Series(AE).quantile(0.05)
-  AE25 = pd.Series(AE).quantile(0.25)
-  AE75 = pd.Series(AE).quantile(0.75)
-  AE50 = pd.Series(AE).quantile(0.5)
-  RMSE = np.sqrt(MSE)
-  outDict = {'R2':R2, 'MAE':MAE, 'MSE':MSE, 'RMSE':RMSE, 'VAE':VAE, 'VSE':VSE,
-             'AE95':AE95, 'AE05':AE05, 'AE50':AE50, 'AE75':AE75, 'AE25':AE25,
-             'E25':E25, 'E75':E75, 'E50':E50}
+  e = e_cleaned
+  ae =  abs(e)
+  me = e.mean()
+  e25 = pd.Series(e).quantile(0.25)
+  e50 = pd.Series(e).quantile(0.50)
+  e75 = pd.Series(e).quantile(0.75)
+  mae = AE.mean()
+  se = e**2
+  mse = se.mean()
+  ave = ae.var()
+  vse = se.var()
+  ae95 = pd.Series(ae).quantile(0.95)
+  ae05 = pd.Series(ae).quantile(0.05)
+  ae25 = pd.Series(ae).quantile(0.25)
+  ae75 = pd.Series(ae).quantile(0.75)
+  ae50 = pd.Series(ae).quantile(0.5)
+  rmse = np.sqrt(mse)
+
+  outDict = {
+    'R2':r2, 'MAE':mae, 'MSE':mse, 'RMSE':rmse, 'VAE':vae, 'VSE':vse,
+    'AE95':ae95, 'AE05':ae05, 'AE50':ae50, 'AE75':ae75, 'AE25':ae25,
+    'E25':e25, 'E75':e75, 'E50':e50}
 
   return outDict
 
@@ -441,31 +445,32 @@ rf.fit(explan,y)
 Yfit = rf.predict(explan)
 plt.scatter(out,y)
 '''
-def FitAggModel(data, explanCols, yCols, aggFcn=np.mean):
+def FitAggModel(df, explanCols, yCols, AggF=np.mean):
 
   print('** agg model was run')
-  df2 = data.copy()
-  dfAgg = df2.groupby(explanCols)[[yCols]].agg(lambda x: aggFcn(x))
+  df2 = df.copy()
+  dfAgg = df2.groupby(explanCols)[[yCols]].agg(lambda x: AggF(x))
   dfAgg = dfAgg.reset_index()
   df2['uncert'] = 1
   dfUncert = df2.groupby(explanCols)[['uncert']].agg(lambda x: np.sum(x))
   dfUncert = dfUncert.reset_index()
 
-  def predFcn(explanDf):
+  def PredF(explanDf):
     mergedDf = pd.merge(explanDf, dfAgg, how='left', on=explanCols)
     yPred = mergedDf[yCols]
     return yPred
-  def uncertFcn(explanDf):
+
+  def UncertF(explanDf):
     mergedDf = pd.merge(explanDf, dfUncert, how='left', on=explanCols)
     uncert = mergedDf['uncert']
-    return(uncert)
+    return uncert
 
-  explanDf = data[explanCols]
-  yFit = predFcn(explanDf)
-  resDict = {'mod':dfAgg, 'yFit':yFit, 'predFcn':predFcn,
-             'uncertFcn':uncertFcn, 'uncert':dfUncert}
+  explanDf = df[explanCols]
+  yFit = PredFcn(explanDf)
 
-  return resDict
+  return {
+      'mod':dfAgg, 'yFit':yFit, 'PredF':PredF,
+      'UncertF':UncertF, 'uncert':dfUncert}
 
 
 '''
@@ -479,10 +484,10 @@ newDict = {'y':y,'x1':x1,'x2':x2,'x3':x3,'x4':x4}
 df2 = pd.DataFrame(newDict)[['y','x1','x2','x3','x4']]
 explanCols = ['x1','x2','x3']
 explanDf = df2[explanCols]
-res = FitAggModel(data=df2,explanCols=explanCols,yCols='y',aggFcn=np.mean)
+res = FitAggModel(df=df2,explanCols=explanCols,yCols='y',AggF=np.mean)
 yFit = res['yFit']
-predFcn = res['predFcn']
-yFit2 = predFcn(explanDf)
+PredF = res['PredF']
+yFit2 = PredF(explanDf)
 plt.scatter(y,yFit2)
 '''
 
@@ -502,13 +507,13 @@ df2 = pd.DataFrame(newDict)[['y','x1','x2','x3']]
 print df2
 explanCols = ['x1','x2','x3']
 explanDf = df2[explanCols]
-res = FitAggModel(data=df2,explanCols=explanCols,yCols='y',aggFcn=np.mean)
+res = FitAggModel(df=df2,explanCols=explanCols,yCols='y',AggF=np.mean)
 print res['uncert']
 yFit = res['yFit']
-predFcn = res['predFcn']
-uncertFcn = res['uncertFcn']
-yFit2 = predFcn(explanDf)
-uncertFit = uncertFcn(explanDf)
+PredF = res['PredF']
+UncertF = res['UncertF']
+yFit2 = PredF(explanDf)
+uncertFit = UncertF(explanDf)
 plt.figure(1)
 plt.scatter(y,yFit2)
 plt.figure(2)
@@ -517,10 +522,11 @@ plt.scatter(y,uncertFit)
 
 
 ### fit linear model to continuous (and categ?) y and report results
-def fitPredModel(data, modExpr=None, explanCols=None, yCols=None,
-                 model='linear', fullModel=False, indTrain=None,
-                 indValid=None, predFcn=None, aggFcn=np.mean,
-                 printSummary=False, pltIt=False):
+def FitPredModel(
+    df, modExpr=None, explanCols=None, yCols=None,
+    model='linear', fullModel=False, indTrain=None,
+    indValid=None, PredF=None, AggF=np.mean,
+    printSummary=False, pltIt=False):
 
   import statsmodels.api as sm
   from patsy import dmatrices
@@ -530,34 +536,35 @@ def fitPredModel(data, modExpr=None, explanCols=None, yCols=None,
     a = a[a.columns[0]]
     return a
 
-  data = data.dropna(subset=data.columns)
+  df = df.dropna(subset=df.columns)
 
-  def buildExplanY(data, explanCols=None, yCols=None):
+  def BuildExplanY(df, explanCols=None, yCols=None):
     if not modExpr == None:
-        y, X = dmatrices(modExpr, data=data, return_type='dataframe')
-        explanCols = list(X.columns)
-        yCols = FindBetweenString(start='', end='~', s=modExpr)
-        y = df_series(y)
+      y, X = dmatrices(modExpr, data=df, return_type='dataframe')
+      explanCols = list(X.columns)
+      yCols = FindBetweenString(start='', end='~', s=modExpr)
+      y = df_series(y)
     else:
-        print(yCols)
-        y = data[yCols]
-        X = data[explanCols]
+      print(yCols)
+      y = df[yCols]
+      X = df[explanCols]
     return {'X':X, 'y':y, 'explanCols':explanCols, 'yCols':yCols}
 
-  explanY = buildExplanY(data, explanCols=explanCols, yCols=yCols)
+  explanY = BuildExplanY(df, explanCols=explanCols, yCols=yCols)
   y = explanY['y']
   X = explanY['X']
   explanCols = explanY['explanCols']
   yCols = explanY['yCols']
 
-  def explanFcn(newData):
-    out = buildExplanY(newData)
-    X = out['X']
+  def ExpalnF(newData):
+    out = BuildExplanY(newData)
+    x = out['X']
     if model == 'linear':
-        X = X.as_matrix()
-    return X
+      xMat = x.as_matrix()
 
-  n = len(data)
+    return xMat
+
+  n = len(df)
 
   if fullModel:
     indTrain = range(n)
@@ -579,13 +586,13 @@ def fitPredModel(data, modExpr=None, explanCols=None, yCols=None,
   Xvalid = X.iloc[indValid]
   modSummary = None
   resMod = None
-  uncertFcn = None
+  UncertF = None
   uncert = None
 
   if model == 'linear':
     mod = sm.OLS(yTrain, Xtrain)
     resMod = mod.fit()
-    modPredFcn = resMod.predict
+    ModPredF = resMod.predict
     modSummary = resMod.summary()
     if (printSummary):
       print(resMod.summary())
@@ -599,26 +606,26 @@ def fitPredModel(data, modExpr=None, explanCols=None, yCols=None,
     yValid = np.array(yValid)
     rf = RandomForestRegressor()
     resMod = rf.fit(Xtrain,yTrain)
-    modPredFcn = resMod.predict
+    ModPredF = resMod.predict
     yTrain = pd.Series(yTrain)
     yValid = pd.Series(yValid)
 
   if model == 'agg':
-    data2 = X
-    data2[yCols] = y
-    res = FitAggModel(data2, explanCols, yCols, aggFcn)
-    modPredFcn = res['predFcn']
+    df2 = X
+    df2[yCols] = y
+    res = FitAggModel(df2, explanCols, yCols, AggF)
+    ModPredF = res['PredF']
     resMod = res['mod']
-    uncertFcn = res['uncertFcn']
+    UncertF = res['UncertF']
     uncert = res['uncert']
 
-  if predFcn is not None:
-    def modPredFcn(x):
-      return ApplyFcnRow(x, fcn=predFcn)
+  if PredF is not None:
+    def ModPredF(x):
+      return ApplyFcnRow(x, fcn=PredF)
     resMod = None
 
-  yFit = modPredFcn(Xtrain)
-  yPred = modPredFcn(Xvalid)
+  yFit = ModPredF(Xtrain)
+  yPred = ModPredF(Xvalid)
   yFit = pd.Series(yFit)
   yPred = pd.Series(yPred)
 
@@ -627,38 +634,39 @@ def fitPredModel(data, modExpr=None, explanCols=None, yCols=None,
     plt.title('validation set')
 
   corr = str(pearsonr(yPred, yValid))
-  Efit = (np.array(yTrain)-np.array(yFit))
-  Efit = pd.Series(Efit)
-  Efit= Efit[~Efit.isnull()]
+  fitErr = (np.array(yTrain)-np.array(yFit))
+  fitErr = pd.Series(fitErr)
+  fitErr= fitErr[~fitErr.isnull()]
 
-  if len(Efit) < len(yTrain):
+  if len(fitErr) < len(yTrain):
     print('Warning: some Nans in the fit')
     print('length of data:' + str(len(yTrain)))
-    print('length of Error vector after removing Nans:' + str(len(Efit)))
+    print('length of Error vector after removing Nans:' + str(len(fitErr)))
 
-  Epred = (np.array(yValid)-np.array(yPred))
-  Epred = pd.Series(Epred)
-  Epred = Epred[~Epred.isnull()]
+  predErr = (np.array(yValid)-np.array(yPred))
+  predErr = pd.Series(predErr)
+  predErr = predErr[~predErr.isnull()]
 
-  if len(Epred) < len(yValid):
+  if len(predErr) < len(yValid):
     print('Warning: some Nans in the pred')
     print('length of data:' + str(len(yValid)))
-    print('length of Error vector after removing Nans:' + str(len(Epred)))
+    print('length of Error vector after removing Nans:' + str(len(predErr)))
 
 
   fitR2 = ModR2(yPred=yFit, yValid=yTrain, mean=yTrain.mean(), yTrain=yTrain)
-  fitMAE =  abs(Efit).mean()
-  fitRMSE =  math.sqrt((abs(Efit)**2).mean())
+  fitMAE =  abs(fitErr).mean()
+  fitRMSE =  math.sqrt((abs(fitErr)**2).mean())
   predR2 = ModR2(yPred,yValid, mean=yTrain.mean(), yTrain=yTrain);
-  predMAE = abs(Epred).mean()
-  predRMSE = math.sqrt((abs(Epred)**2).mean())
+  predMAE = abs(predErr).mean()
+  predRMSE = math.sqrt((abs(predErr)**2).mean())
 
-  return {'mod':resMod, 'modPredFcn':modPredFcn,
-    'summary':modSummary, 'yFit':yFit, 'yTrain':yTrain, 'yValid':yValid,
-    'uncertFcn':uncertFcn, 'uncert':uncert,
-    'yPred':yPred, 'Xtrain':Xtrain, 'Xvalid':Xvalid, 'explanFcn':explanFcn,
-    'fitR2':fitR2, 'predR2':predR2, 'predMAE':predMAE, 'predRMSE':predRMSE,
-    'fitMAE':fitMAE, 'fitRMSE':fitRMSE}
+  return {
+      'mod':resMod, 'ModPredF':ModPredF,
+      'summary':modSummary, 'yFit':yFit, 'yTrain':yTrain, 'yValid':yValid,
+      'UncertF':UncertF, 'uncert':uncert,
+      'yPred':yPred, 'Xtrain':Xtrain, 'Xvalid':Xvalid, 'ExpalnF':ExpalnF,
+      'fitR2':fitR2, 'predR2':predR2, 'predMAE':predMAE, 'predRMSE':predRMSE,
+      'fitMAE':fitMAE, 'fitRMSE':fitRMSE}
 
 '''
 # example:
@@ -681,7 +689,7 @@ yString = 'y'
 modExpr = yString + '~' + explanString
 
 plt.figure(2)
-fitPredModel(modExpr,data=df2)
+FitPredModel(modExpr, df=df2)
 '''
 
 '''
@@ -696,14 +704,15 @@ df2 = pd.DataFrame(newDict)[['y','x1','x2','x3','x4']]
 explanCols = ['x1','x2','x3']
 explanDf = df2[explanCols]
 
-res = fitPredModel(data=df2,modExpr=None,explanCols=explanCols,yCols=yCols,
+res = FitPredModel(
+    df=df2,modExpr=None,explanCols=explanCols,yCols=yCols,
     model='linear',fullModel=False,
-    indTrain=None,indValid=None,predFcn=None,printSummary=False,pltIt=False)
+    indTrain=None,indValid=None,PredF=None,printSummary=False,pltIt=False)
 
-res = FitAggModel(data=df2,explanCols=explanCols,yCols='y',aggFcn=np.mean)
+res = FitAggModel(df=df2,explanCols=explanCols,yCols='y',AggF=np.mean)
 yFit = res['yFit']
-predFcn = res['predFcn']
-yFit2 = predFcn(explanDf)
+PredF = res['PredF']
+yFit2 = PredF(explanDf)
 plt.scatter(y,yFit2)
 '''
 
@@ -725,27 +734,27 @@ print explanCols
 print yCols
 
 ## linear model with column names
-res = fitPredModel(data=df2,modExpr=None,explanCols=explanCols,yCols=yCols,
+res = FitPredModel(df=df2,modExpr=None,explanCols=explanCols,yCols=yCols,
     model='linear',fullModel=False,
-    indTrain=None,indValid=None,predFcn=None,printSummary=False,pltIt=False)
+    indTrain=None,indValid=None,PredF=None,printSummary=False,pltIt=False)
 
 ## linear model with model expression
 modExpr = 'y~x1+x2+x3'
-res = fitPredModel(data=df2,modExpr=modExpr,explanCols=None,yCols=None,
+res = FitPredModel(df=df2,modExpr=modExpr,explanCols=None,yCols=None,
     model='linear',fullModel=False,
-    indTrain=None,indValid=None,predFcn=None,printSummary=False,pltIt=False)
+    indTrain=None,indValid=None,PredF=None,printSummary=False,pltIt=False)
 ## agg model with Full Model
-res = fitPredModel(data=df2,modExpr=None,explanCols=explanCols,yCols=yCols,
+res = FitPredModel(df=df2,modExpr=None,explanCols=explanCols,yCols=yCols,
     model='agg',fullModel=True,
-    indTrain=None,indValid=None,predFcn=None,printSummary=False,pltIt=True)
+    indTrain=None,indValid=None,PredF=None,printSummary=False,pltIt=True)
 
 '''
 
 ### Fourier series matrix
-def Fseries(data, colName, omega=2*math.pi, order=1):
+def Fseries(df, colName, omega=2*math.pi, order=1):
 
   df = {}
-  x = data[colName]
+  x = df[colName]
   x = np.array(x)
   columns = []
 
@@ -765,25 +774,25 @@ def Fseries(data, colName, omega=2*math.pi, order=1):
 
 ''' example
 x = np.linspace(2.0, 3.0, num=100)
-data1 = DataFrame({'x':x})
-FS = Fseries(data=data1,colName='x',omega=2*math.pi,order=2)
+df1 = DataFrame({'x':x})
+FS = Fseries(df=df1,colName='x',omega=2*math.pi,order=2)
 '''
 
-def AddFseries(data, colNames, omegas=None, orders=None):
+def AddFseries(df, colNames, omegas=None, orders=None):
 
   k = len(colNames)
   if omegas == None:
     omegas = [2*math.pi]*len(colNames)
   if orders == None:
     orders = [1]*len(colNames)
-  outData = data
+  outData = df
   outColumns = []
 
   for i in range(k):
     colName = colNames[i]
     omega = omegas[i]
     order = orders[i]
-    FS = Fseries(data=data, colName=colName, omega=omega, order=order)
+    FS = Fseries(df=df, colName=colName, omega=omega, order=order)
     FSdf = FS['df']
     FScolumns = FS['columns']
     outData = concat([outData, FSdf], axis=1)
@@ -795,14 +804,14 @@ def AddFseries(data, colNames, omegas=None, orders=None):
 # example
 x = np.linspace(2.0, 3.0, num=100)
 y = np.linspace(3.0, 4.0, num=100)
-data = DataFrame({'x':x, 'y':y})
-res = AddFseries(data,colNames=['x','y'],
+df = pd.DataFrame({'x':x, 'y':y})
+res = AddFseries(df,colNames=['x','y'],
   omegas=[2*math.pi,4*math.pi],orders=[1,2])
-data1 = res['df']
+df1 = res['df']
 '''
 
-## add interaction of variables to data
-def AddInterac(data, s1, s2):
+## add interaction of variables to df
+def AddInterac(df, s1, s2):
 
   n = len(s1)
   m = len(s2)
@@ -811,13 +820,13 @@ def AddInterac(data, s1, s2):
     for j in range(m):
       k = s1[i]
       l = s2[j]
-      name1 = data.columns[k]
-      name2 = data.columns[l]
+      name1 = df.columns[k]
+      name2 = df.columns[l]
       name = name1 + '_' + name2;
-      z = data.icol(k)*data.icol(l)
-      data[name] = z
+      z = df.icol(k)*df.icol(l)
+      df[name] = z
 
-  return data
+  return df
 
 ##
 def InteracExpr(s1, s2, sep='+'):
@@ -837,25 +846,25 @@ def InteracExpr(s1, s2, sep='+'):
 
   return expr
 
-## re-order columns of the data set via bootstrap
-def BootsCol(data, ss=None, replace=True):
+## re-order columns of the df set via bootstrap
+def BootsCol(df, ss=None, replace=True):
 
-  k = len(data.columns)
+  k = len(df.columns)
 
   if ss is None:
     ss = k
   sample = np.random.choice(k, ss, replace=replace)
-  l = data.columns[sample]
-  data2 = data[l]
+  l = df.columns[sample]
+  df2 = df[l]
 
-  return data2
+  return df2
 
 #dfColSwapped=BootsCol(dfBu, ss=20, replace=False)
 
 
-def ExpandDf_viaColSubset(data, subsetSize, copyNum):
+def ExpandDf_viaColSubset(df, subsetSize, copyNum):
 
-  k = len(data.columns)
+  k = len(df.columns)
   # print k
   import itertools
   l = list(itertools.combinations(range(k), subsetSize))
@@ -867,8 +876,8 @@ def ExpandDf_viaColSubset(data, subsetSize, copyNum):
   # print l
   num = len(l)
   fullset = set(range(k))
-  outData = data.copy()
-  colNames = data.columns
+  outData = df.copy()
+  colNames = df.columns
   part1 = range(subsetSize)
   part2 = fullset.difference(part1)
   part1 = list(part1)
@@ -876,55 +885,55 @@ def ExpandDf_viaColSubset(data, subsetSize, copyNum):
   range(1, copyNum)
 
   for i in range(1,copyNum):
-    data2 = data.copy()
-    ## i+1 because we already have the data
+    df2 = df.copy()
+    ## i+1 because we already have the df
     subset = set(l2[i])
     subsetComp = fullset.difference(subset)
     list1 = list(subset)
     list2 = list(subsetComp)
     colNames1 = [colNames[i] for i in list1]
-    data2.iloc[:, part1] = data.iloc[:, list1].values
-    data2.iloc[:, part2] = data.iloc[:, list2].values
-    data2.columns = data.columns
-    outData = outData.append(data2)
+    df2.iloc[:, part1] = df.iloc[:, list1].values
+    df2.iloc[:, part2] = df.iloc[:, list2].values
+    df2.columns = df.columns
+    outData = outData.append(df2)
 
   return outData
 
-def ExpandDf_viaColReorder(data, copyNum, replace=True):
+def ExpandDf_viaColReorder(df, copyNum, replace=True):
 
-  outData = data.copy()
+  outData = df.copy()
 
   for i in range(copyNum):
-    data2 = BootsCol(data, ss=None, replace=replace)
-    data2.columns = data.columns
-    outData = outData.append(data2)
+    df2 = BootsCol(df, ss=None, replace=replace)
+    df2.columns = df.columns
+    outData = outData.append(df2)
 
   return outData
 
 
 ## bootstrap the rows
-def BootsRow(data, ss=None, replace=True):
+def BootsRow(df, ss=None, replace=True):
 
-  n = len(data)
+  n = len(df)
   if ss == None:
     ss = n
   sample = np.random.choice(n, ss, replace=replace)
-  data2 = data.iloc[sample,:]
+  df2 = df.iloc[sample,:]
 
-  return data2
+  return df2
 
-#dfRowSwapped = BootsRow(data=dfBu,replace=False)
+#dfRowSwapped = BootsRow(df=dfBu,replace=False)
 
 ## comparing measure stability, ss=k vs ss=k
-def SplitDfCols(data, ind1=range(10), ind2=range(10,20)):
+def SplitDfCols(df, ind1=range(10), ind2=range(10,20)):
 
-  colNames = data.columns
+  colNames = df.columns
   cols1 = [colNames[x] for x in ind1]
   cols2 = [colNames[x] for x in ind2]
-  data1 = data[cols1]
-  data2 = data[cols2]
+  df1 = df[cols1]
+  df2 = df[cols2]
 
-  return {'df1':data1, 'df2':data2}
+  return {'df1':df1, 'df2':df2}
 
 ## creates a large outlier or small
 ## if upper and lower are specified, uses them as outlier values
@@ -968,7 +977,7 @@ def CreateOutlierDf(df, upper=None, lower=None, side='free'):
 
   return out
 
-## ordering the rows of a data frame
+## ordering the rows of a df frame
 def OrderDfRows(df):
 
   n = len(df)

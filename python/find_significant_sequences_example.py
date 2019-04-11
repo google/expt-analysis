@@ -71,8 +71,8 @@ writePath = '~/data/seq_data/'
 ## define a figs path
 figsPath = '~/data/seq_data/figs/'
 
-## define a write path for writing results tables
-writePath = '~/data/seq_data/tables/'
+## define a tables path for writing results tables
+tablesPath = '~/data/seq_data/tables/'
 
 # Example with simulated data demo purpose:
 
@@ -129,11 +129,8 @@ Mark(
     bold=True)
 
 
-seqTablesDf
-
-
 ## step 3: get that particular table we need using the info table
-rowNum = 1
+rowNum = 0
 row = seqTablesDf.iloc[rowNum]
 trim = row['trim']
 Mark(trim, 'trim')
@@ -210,7 +207,7 @@ plt.figure()
 Mark(text="SIG PLOTS + PENETRATION PLOT", color='blue', bold=True)
 
 
-sigDf = Plt_sigSeq_compareSlices(
+sigDict = Plt_sigSeq_compareSlices(
     seqDfWithSignif=seqDfWithSignif2.copy(),
     sliceCols=sliceCols,
     condDict=condDict,
@@ -228,20 +225,20 @@ sigDf = Plt_sigSeq_compareSlices(
     saveFig=True,
     figPath=figsPath,
     figFnPrefix=sqlTableName.replace('.', '_'),
-    figFnExt='png')
-
+    figFnExt='png',
+    Open=OpenFile)
 
 sigDf = sigDict['df']
-if sigDf is not None:
+
+sigDf = sigDict['df']
+if (sigDf is not None):
   Mark(x=sigDf.shape, text="sigDf.shape:", color="green", bold=True)
   Mark(x=sigDf[:6], text="sigDf snapshot:", color="blue", bold=True)
+  Write_sigSeqDf(
+      sigDf=sigDf,
+      sqlTableName=sqlTableName,
+      path=tablesPath,
+      regDict=regDict,
+      condDict=condDict)
 else:
   Mark(text='no data was found', color='red')
-
-if sigDf is not None:
-    Write_sigSeqDf(
-        sigDf=sigDf,
-        sqlTableName=sqlTableName,
-        path=writePath,
-        regDict=regDict,
-        condDict=condDict)

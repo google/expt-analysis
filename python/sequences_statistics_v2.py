@@ -602,7 +602,8 @@ def CalcProbMetrics_fromSummable(
 
 '''
 trim = 3
-df = Sim_depUsageData(userNum=5, subSeqLen=3, repeatPattern=200)
+df = Sim_depUsageData(
+    userNum=5, subSeqLen=3, repeatPattern=200)
 
 seqDf = CreateSeqTab_addEventCombin(
     df=df,
@@ -903,7 +904,7 @@ def Plt_sigSeq_compareSlices(
   if len(df2) == 0:
     print('\n\n *** No data satisfied the conditions,' +
           'functions returns \n\n')
-    return None
+    return {'df': None, 'plotDict': None}
 
   df2 = df2.sort_values([orderByCol], ascending=[1])
   if seqNumLimit != None:
@@ -970,7 +971,7 @@ def Plt_sigSeq_compareSlices(
   if addPenetPlots:
     for col in ['penetration', 'penetration_ci_upper',
                 'penetration_ci_lower']:
-      df[col] = 100.0 * df[col]
+      df[col] = df[col]
     #m1 = (df['penetration_upper'].max() / 5).round()
     #m2 = max([1, m1]) + 2
     #addVerLines = [0.01, 0.1, 1, 2, m2/2.0, m2]
@@ -996,7 +997,6 @@ def Plt_sigSeq_compareSlices(
         pltTitle='penetration (%)',
         figSize=figSize)
     plotDict['penet'] = p3
-    #plt.plot(x, y)
 
     if saveFig:
       fn0 = figPath + figFnPrefix + '_user_penetration.' + figFnExt
@@ -1195,6 +1195,7 @@ def Gen_seqData_FnTableNames(
     trim,
     timeGapDict,
     seqCol,
+    countDistinctCols,
     writePath,
     DefineSqlTable_fromFile,
     condDict=None,
@@ -1216,6 +1217,11 @@ def Gen_seqData_FnTableNames(
   if seqCol != '':
     fn = fn + '_' + seqCol
     sqlTableName = sqlTableName + '.' + seqCol
+
+  if countDistinctCols not in [None, ""]:
+    fn = fn + '_' + "_".join(countDistinctCols)
+    sqlTableName = sqlTableName + '.' + "_".join(countDistinctCols)
+
 
   if condString != '':
     fn = fn + '_' + condString
@@ -1281,6 +1287,7 @@ def WriteSeqTable_forSql(
       trim=trim,
       timeGapDict=timeGapDict,
       seqCol=seqCol,
+      countDistinctCols=countDistinctCols,
       condDict=condDict,
       writePath=writePath,
       fnSuff=fnSuff,

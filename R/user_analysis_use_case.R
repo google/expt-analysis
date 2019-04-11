@@ -373,7 +373,7 @@ SimData_write = function(
   close(fn)
 
   gbCols = c("country", "gender", "expt_id")
-  Check_forUnbalance(dt=userDt_fromUsage_obs, predCols=c("country", "gender"))
+  Check_forImbalance(dt=userDt_fromUsage_obs, predCols=c("country", "gender"))
 }
 
 ## read sim data
@@ -1160,11 +1160,11 @@ OpenData_Explore_simVer = function(ver, dataPath) {
   userNum = length(unique(userDt_usageConsisCols[ , user_id]))
   Mark(userNum)
   dt = userDt_fromUsage_obs
-  p1 = Check_forUnbalance(dt=dt, predCols=c("gender"))[["p"]]
-  p2 = Check_forUnbalance(dt=dt, predCols=c("country"))[["p"]]
-  #p3 = Check_forUnbalance(dt=dt, predCols=c("gender", "country"))[["p"]]
+  p1 = Check_forImbalance(dt=dt, predCols=c("gender"))[["p"]]
+  p2 = Check_forImbalance(dt=dt, predCols=c("country"))[["p"]]
+  #p3 = Check_forImbalance(dt=dt, predCols=c("gender", "country"))[["p"]]
   pltList = list(p1, p2)
-  fn0 = paste0(figsPath, "check_for_unbalance_", ver, ".png")
+  fn0 = paste0(figsPath, "check_for_imbalance_", ver, ".png")
   print(fn0)
   fn = file(fn0, "w")
 

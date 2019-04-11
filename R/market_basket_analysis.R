@@ -129,7 +129,8 @@ Find_sigBaskets_fromSeqData = function(
     keepFreqItemOnly=FALSE,
     topItemNum=200,
     basketSep=";",
-    writePath=NULL) {
+    writePath=NULL,
+    fnPrefix="basket") {
 
   Mark(x=dim(seqDf), text="this is the uploaded seqDf shape")
   Mark(x=colnames(seqDf), text="this is the sedDf column names")
@@ -137,7 +138,7 @@ Find_sigBaskets_fromSeqData = function(
 
   seqDf = seqDf[ , c(idCols, basketCol)]
 
-  ### we could only keep baskets with more than one element
+  ## we could only keep baskets with more than one element
   # calculate basket size
   x = seqDf[ , basketCol]
   seqDf[ , "basketSize"] = lengths(regmatches(x, gregexpr(",", x))) + 1
@@ -145,11 +146,12 @@ Find_sigBaskets_fromSeqData = function(
   Mark(x=dim(seqDf), text="dim of seqDf after removing small baskets")
 
   ## flatten the data
-  flatDf = FlattenDfRepField(df=seqDf, listCol=basketCol, sep=basketSep)
+  flatDf = Flatten_RepField(df=seqDf, listCol=basketCol, sep=basketSep)
   flatDf[ , "usage"] = flatDf[ , basketCol]
   Mark(dim(flatDf), "dim(flatDf)")
   flatDf[ , "trans_id"] = do.call(
-      what=function(...)paste(..., sep="-"), args=flatDf[ , idCols])
+      what=function(...)paste(..., sep="-"),
+      args=flatDf[ , idCols, drop=FALSE])
 
 
   df = flatDf[ , c("trans_id", "usage")]
@@ -210,14 +212,16 @@ Find_sigBaskets_fromSeqData = function(
     fn = paste0(writePath, fnPrefix,  "_rules", ".csv")
     Mark(fn, text="this file is being written")
     fn = file(fn)
-    write.csv(file=fn, x=rulesDf2, row.names=FALSE)
+    write.csv(file=fn, x=SignifDf(rulesDf2, 3), row.names=FALSE)
 
     fn = paste0(writePath, fnPrefix, "_rules_summary", ".csv")
     Mark(fn, text="this file is being written")
     fn = file(fn)
-    write.csv(file=fn, x=basketsKto1, row.names=FALSE)
+    write.csv(file=fn, x=SignifDf(basketsKto1, 3), row.names=FALSE)
   }
 
-  return(list("rulesDf"=rulesDf, "rulesDfSummary"=basketsKto1))
+  return(list(
+      "rulesDf"=SignifDf(rulesDf, 3),
+      "rulesDfSummary"=SignifDf(basketsKto1, 3)))
 
 }

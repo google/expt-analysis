@@ -51,7 +51,8 @@ during the whole period
 ######### PART 1: per item metrics w/o CI except for penetration
 ## calculate number of distinct items (e.g. users) in a slice
 # for example slice:[country, date]
-def CountItemsPerSlice(df, itemCols, sliceCols, newColName='item_num'):
+def CountItems_perSlice(df, itemCols, sliceCols, newColName='item_num'):
+
   df2 = df.copy()
 
   # adding a single item col which captures all itemCols
@@ -73,7 +74,7 @@ def CountItemsPerSlice(df, itemCols, sliceCols, newColName='item_num'):
 
 '''
 df = GenUsageDf_forTesting()
-CountItemsPerSlice(
+CountItems_perSlice(
     df=df,
     itemCols=['user_id', 'prod'],
     sliceCols=['country', 'date'],
@@ -92,7 +93,7 @@ CountItemsPerSlice(
 # for each slice, if usage occurs for some item but not for others for that slice
 # add slice, item, usage to data and assign the usage_occ to be zero
 # adjustment is possible for denominators
-def CalcPerItemMetrics(
+def Calc_perItemMetrics(
     df,
     itemCols,
     sliceCols,
@@ -103,7 +104,7 @@ def CalcPerItemMetrics(
 
   valueColInit = valueCol
   if valueCol is None:
-    valueCol = 'dummy'
+    valueCol = "dummy"
     df[valueCol] = 1
   ## adding an occurrence column
   df[occColName] = 1
@@ -116,7 +117,7 @@ def CalcPerItemMetrics(
       sepStr='-')
 
   # calculate total numbers of items (e.g. users) per slice
-  dfItemCount = CountItemsPerSlice(
+  dfItemCount = CountItems_perSlice(
       df2,
       itemCols=['item'],
       sliceCols=sliceCols,
@@ -125,7 +126,8 @@ def CalcPerItemMetrics(
   # here we adjust denoms if needed
   if adjustDenom == "max":
     Mark("denom adjustment was invoked.")
-    dfItemCount["item_count_in_slice"] = dfItemCount["item_count_in_slice"].max()
+    dfItemCount["item_count_in_slice"] = dfItemCount[
+        "item_count_in_slice"].max()
 
   ## calculating total count and value per item.
   g = df2.groupby(sliceCols + usageCols, as_index=False)
@@ -136,7 +138,9 @@ def CalcPerItemMetrics(
 
   dfAgg = g.agg(aggFcnDict)
   dfAgg.columns = [''.join(col).strip() for col in dfAgg.columns.values]
+
   dfM = pd.merge(dfAgg, dfItemCount, how='left')
+
   metrics = [occColName + '_count', valueCol + '_total']
 
   for metric in metrics:
@@ -146,7 +150,7 @@ def CalcPerItemMetrics(
 
   dfM['penetration'] = (
       1.0 * dfM['item_with_usage_count'] /
-      dfM['item_count_in_slice']).map(Signif(3))
+      dfM['item_count_in_slice']).map(Signif(5))
 
   if valueColInit is None:
     for col in dfM.columns:
@@ -159,7 +163,7 @@ def CalcPerItemMetrics(
 df = GenUsageDf_forTesting()
 
 ## count user/date
-CalcPerItemMetrics(
+Calc_perItemMetrics(
     df=df,
     itemCols=['user_id', 'date'],
     sliceCols=['country'],
@@ -167,19 +171,20 @@ CalcPerItemMetrics(
     valueCol='value')
 '''
 
-## calculate the sd for bernouli distbn avg even when the sample size is small
+## calculate the sd for
+# bernouli distbn avg even when the sample size is small
 def CalcBernouliSd(p, ss):
 
   if ss == 0:
     return float('nan')
 
-  sd = math.sqrt(1.0*p*(1-p)/ss)
+  sd = math.sqrt(1.0 * p * (1 - p) / ss)
 
   if ss < 20:
-     sd = 0.5*(sd + math.sqrt(0.5*0.5/ss))
+     sd = 0.5*(sd + math.sqrt(0.5 * 0.5 / ss))
 
   if ss < 5:
-    sd = math.sqrt(0.5*0.5/ss)
+    sd = math.sqrt(0.5 * 0.5 / ss)
 
   return sd
 
@@ -192,8 +197,9 @@ Mark(CalcBernouliSd(p=0.99, ss=5))
 '''
 
 ## calculates the penetration with conf intervals
-# this is done via the fast method (which does not complete the data)
-# since for bernouli its possible to calc sd
+# this is done via the fast method
+# (which does not complete the data)
+# since for Bernouli its possible to calc sd
 def CalcItemPenet(
     df,
     itemCols,
@@ -202,7 +208,13 @@ def CalcItemPenet(
     adjustDenom=None,
     pltIt=False):
 
-  perItemDf = CalcPerItemMetrics(
+  # drop repeated rows to only count a usage once
+  cols = itemCols + sliceCols + usageCols
+  Mark(df.shape, "df.shape before removing duplicates")
+  df = df[cols].drop_duplicates()
+  Mark(df.shape, "df.shape after removing duplicates")
+
+  perItemDf = Calc_perItemMetrics(
       df=df,
       itemCols=itemCols,
       sliceCols=sliceCols,
@@ -267,7 +279,7 @@ CalcItemPenet(df=df,
 
 ## we compare, total usage for items, number of usages and
 # percent of items in slice who has usage (e.g. app usage) aka penetration
-# this calls: CalcPerItemMetrics to calculate metrics
+# this calls: Calc_perItemMetrics to calculate metrics
 def CompareUsageSlices(
     df,
     usageCol,
@@ -294,7 +306,7 @@ def CompareUsageSlices(
     df2 = df2[ind].copy()
 
   df2 = df2.reset_index(drop=True)
-  dfMetrics = CalcPerItemMetrics(
+  dfMetrics = Calc_perItemMetrics(
       df=df2,
       itemCols=itemCols,
       sliceCols=[compareCol],
@@ -674,7 +686,7 @@ Mark(filledDf6[:20])
 # its slower because it completes the data grid
 # itemCols: these are the units for which we aggr data
 # in particular valueCol is summed
-def CalcPerItemMetrics_withDistr(
+def Calc_perItemMetrics_withDistr(
     df,
     itemCols,
     sliceCols,
@@ -803,7 +815,7 @@ missingReplaceDict = {'value':0}
 
 
 ## fast method without variability
-itemMetricsDf1 = CalcPerItemMetrics(
+itemMetricsDf1 = Calc_perItemMetrics(
     df=df,
     itemCols=itemCols,
     sliceCols=sliceCols,
@@ -811,7 +823,7 @@ itemMetricsDf1 = CalcPerItemMetrics(
     valueCol='value')
 
 ## slower method but with variability
-itemMetricsDf2 = CalcPerItemMetrics_withDistr(
+itemMetricsDf2 = Calc_perItemMetrics_withDistr(
     df=df,
     itemCols=itemCols,
     sliceCols=sliceCols,
@@ -822,7 +834,7 @@ itemMetricsDf2 = CalcPerItemMetrics_withDistr(
     itemSliceMatchCols=None)
 
 ## slower method but with variability
-itemMetricsDf3 = CalcPerItemMetrics_withDistr(
+itemMetricsDf3 = Calc_perItemMetrics_withDistr(
     df=df,
     itemCols=itemCols,
     sliceCols=sliceCols,
@@ -833,7 +845,7 @@ itemMetricsDf3 = CalcPerItemMetrics_withDistr(
     itemSliceMatchCols=None)
 
 ## slower method, with global filling, not recommended usually
-itemMetricsDf4 = CalcPerItemMetrics_withDistr(
+itemMetricsDf4 = Calc_perItemMetrics_withDistr(
     df=df,
     itemCols=itemCols,
     sliceCols=sliceCols,
@@ -1078,7 +1090,7 @@ def CompareUsageSlices_withDistr(
     df2 = df2[BuildRegexInd(df=df2, regDict=regDictPre)]
     df2 = df2.reset_index()
 
-  dfMetrics = CalcPerItemMetrics_withDistr(
+  dfMetrics = Calc_perItemMetrics_withDistr(
       df=df2,
       itemCols=itemCols,
       sliceCols=[compareCol],
@@ -1392,7 +1404,7 @@ df = GenUsageDf_forTesting()
 usageCols = ['prod']
 valueCol = 'duration'
 
-dfMetrics = CalcPerItemMetrics_withDistr(
+dfMetrics = Calc_perItemMetrics_withDistr(
     df=df,
     itemCols=['user_id', 'date'],
     sliceCols=['country', 'expt'],
@@ -1472,7 +1484,7 @@ dfMetrics = CompareUsageSlices(
     sizeAlpha=0.25)
 
 
-res = CalcPerItemMetrics_withDistr(
+res = Calc_perItemMetrics_withDistr(
     df=df,
     itemCols=itemCols,
     sliceCols=[compareCol],
@@ -1758,7 +1770,7 @@ def BalanceSampleSize(
     if len(df0) < 2:
       minSs = -float('inf')
 
-  dfItemSliceIndex = FlattenDfRepField(
+  dfItemSliceIndex = Flatten_RepField(
       df=dfItemCount_perSlice, listCol='slice_item_index')
   del dfItemSliceIndex['item_combin_count']
 

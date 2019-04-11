@@ -755,7 +755,7 @@ BalanceSampleSize = function(
     }
   }
 
-  dfItemSliceIndex = FlattenDfRepField(
+  dfItemSliceIndex = Flatten_RepField(
       df=dfItemCount_perSlice,
       listCol="slice_item_index")
 
@@ -1079,8 +1079,8 @@ PredBased_Diffs = function(
       "aggDiff_allDataNoExptId"=F(modelPred_data[["userLevMeans_allDataNoExptId"]])))
 }
 
-# check  unbalance in predictors in expt arms
-Check_forUnbalance = function(dt, predCols) {
+# check  imbalance in predictors in expt arms
+Check_forImbalance = function(dt, predCols) {
 
   userCntDt = DtSimpleAgg(
       dt=dt,

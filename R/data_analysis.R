@@ -42,12 +42,12 @@ Pr = function(x) {
   }
 }
 
-
+## print columns of data frame in readable format
 PrCols = function(df) {
   Pr(colnames(df))
 }
 
-
+## some basic info about data.frame
 DescribeDf = function(df) {
 
   print(paste0(
@@ -230,7 +230,7 @@ TrimTrailing = function(x) {
 ## flatting a column with repeated field
 # below we have another version of same function
 # which is most likely faster for large data
-FlattenDfRepField_v1 = function(df, listCol, sep=NULL) {
+Flatten_RepField_v1 = function(df, listCol, sep=NULL) {
 
   if (!is.null(sep)) {
     s = strsplit(as.character(df[ , listCol]), split=sep)
@@ -246,22 +246,22 @@ FlattenDfRepField_v1 = function(df, listCol, sep=NULL) {
   return(outDf)
 }
 
-TestFlattenDfRepField_v1 = function() {
+TestFlatten_RepField_v1 = function() {
 
   df = data.frame(list("var1"=c("a,b,c", "d,e,f"), "var2"=1:2, "var3"=3:4))
   print(df)
-  FlattenDfRepField_v1(df=df, listCol="var1", sep=",")
+  Flatten_RepField_v1(df=df, listCol="var1", sep=",")
 
   df = data.frame(list("var1"=I(list(1:3, 4:6)), "var2"=1:2, "var3"=3:4))
   print(df)
-  FlattenDfRepField_v1(df=df, listCol="var1", sep=NULL)
+  Flatten_RepField_v1(df=df, listCol="var1", sep=NULL)
 }
 
 ## flatten a column (listCol) of df with multiple values
 # the column elements could be lists
 # or could be separated by sep e.g. comma
 # this is faster than v1, but more complex
-FlattenDfRepField = function(df, listCol, sep=NULL) {
+Flatten_RepField = function(df, listCol, sep=NULL) {
 
   if (!is.null(sep)) {
     F = function(x) {
@@ -283,15 +283,15 @@ FlattenDfRepField = function(df, listCol, sep=NULL) {
   return(df)
 }
 
-TestFlattenDfRepField = function() {
+TestFlatten_RepField = function() {
 
   df = data.frame(list("var1"=c("a;b;c", "d;e;f"), "var2"=1:2, "var3"=3:4))
   print(df)
-  FlattenDfRepField(df=df, listCol="var1", sep=";")
+  Flatten_RepField(df=df, listCol="var1", sep=";")
 
   df = data.frame(list("var1"=I(list(1:3, 4:6)), "var2"=1:2, "var3"=3:4))
   print(df)
-  FlattenDfRepField(df=df, listCol="var1", sep=NULL)
+  Flatten_RepField(df=df, listCol="var1", sep=NULL)
 }
 
 ## creating a single string column using multiple columns (cols)
@@ -1407,10 +1407,12 @@ FreqTables_simpleDiff = function(
       "global_err"=global_err))
 }
 
+## which value is the min
 MinInd = function(x) {
   which(x == min(x))
 }
 
+# which row has the min value for col
 MinIndDf = function(df, col) {
 
   x = df[ , col]

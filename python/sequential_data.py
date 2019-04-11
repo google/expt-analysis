@@ -882,30 +882,30 @@ def ShiftedSeqDf(
   df2[seqCol] = [F(x) for x in df[seqCol].values]
   df2['seq_shift_order'] = [range(len(x)) for x in df2[seqCol].values]
 
-  seqDf = FlattenDfRepField(df=df2, listCol=seqCol, sep=None)
+  seqDf = Flatten_RepField(df=df2, listCol=seqCol, sep=None)
 
   df2['lag'] = [H(x) for x in df[seqCol].values]
-  seqDf2 = FlattenDfRepField(df=df2, listCol='lag', sep=None)
+  seqDf2 = Flatten_RepField(df=df2, listCol='lag', sep=None)
   seqDf['lag'] = seqDf2['lag']
 
   df2['lagBasket'] = [B(x) for x in df[seqCol].values]
-  seqDf2 = FlattenDfRepField(df=df2, listCol='lagBasket', sep=None)
+  seqDf2 = Flatten_RepField(df=df2, listCol='lagBasket', sep=None)
   seqDf['lagBasket'] = seqDf2['lagBasket']
 
   for col in (extraCols):
     df2[col] = [F(x) for x in df2[col].values]
-    seqDf2 = FlattenDfRepField(df=df2, listCol=col, sep=None)
+    seqDf2 = Flatten_RepField(df=df2, listCol=col, sep=None)
     seqDf[col] = seqDf2[col]
 
     df2[col + '_lag'] = [H(x) for x in df[col].values]
-    seqDf2 = FlattenDfRepField(df=df2, listCol=col + '_lag', sep=None)
+    seqDf2 = Flatten_RepField(df=df2, listCol=col + '_lag', sep=None)
     seqDf[col + '_lag'] = seqDf2[col + '_lag']
 
     df2[col + '_lagBasket'] = [B(x) for x in df[col].values]
-    seqDf2 = FlattenDfRepField(df=df2, listCol=col + '_lagBasket', sep=None)
+    seqDf2 = Flatten_RepField(df=df2, listCol=col + '_lagBasket', sep=None)
     seqDf[col + '_lagBasket'] = seqDf2[col + '_lagBasket']
 
-  orderDf = FlattenDfRepField(df=df2, listCol='seq_shift_order', sep=None)
+  orderDf = Flatten_RepField(df=df2, listCol='seq_shift_order', sep=None)
   seqDf['seq_shift_order'] = orderDf['seq_shift_order'].map(str)
 
   for col in ([seqCol] + extraCols):

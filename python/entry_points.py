@@ -436,7 +436,7 @@ def CompareEntryPoints(
       colorList = colorList + ['y']
       alphaList = alphaList + [0.2]
 
-    p = PlotColumnsWrtIndex(
+    p = PltCols_wrtIndex(
         df=tab,
         cols=cols,
         categCol='categ',
@@ -449,3 +449,13 @@ def CompareEntryPoints(
         orient='h')
 
   return {'tab': tab, 'plot': p}
+
+
+## plots the bar plot of the time difference between two time columns
+def Plt_timeDiff_barPlot(df, col1, col2, pltTitle=None):
+
+  x = df[col2] - df[col1]
+  y = x.dt.days
+  if pltTitle == None:
+    pltTitle = col2 + ' - ' + col1
+  CutBarPlot(y, method='uniform', num=5, pltTitle=pltTitle)
