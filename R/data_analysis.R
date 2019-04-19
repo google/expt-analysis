@@ -66,7 +66,7 @@ Pause = function() {
 }
 
 ## checks if a library is installed
-IsInstalled  =  function(pkg) {
+IsInstalled = function(pkg) {
   is.element(pkg, installed.packages()[ , 1])
 }
 
@@ -1185,7 +1185,7 @@ StringCartesianProd = function(..., prefix="", sep="_") {
 TestStringCartesianProd = function() {
 
   values = c("active_days_num", "activity_num")
-  products = c("assist", "search", "randomWatchApp", "photos", "multi")
+  products = c("assist", "search", "watchFeat", "photos", "multi")
   periods = c("pre", "post")
   valueCols = StringCartesianProd(values, products, periods, sep="_")
 }

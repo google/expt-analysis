@@ -60,6 +60,9 @@ Mark(2*10, 'xxx', bold=False, underline=True)
 Mark(2*10, 'xxx', bold=False, underline=True, color='red')
 Mark(x='', text='xxx', bold=True, underline=True, color='green')
 '''
+
+## These are the default functions to communicate with OS
+# re-write them if needed
 FileExists = os.path.exists
 OpenFile = open
 ListDir = os.listdir
@@ -298,7 +301,7 @@ def ReadDirData_parallel(
     return dfDict
 
   ## we either row bind data or we write data if writeFn is not None
-  if writeFn == None:
+  if writeFn is None:
     '''
     for i in range(len(fileList)):
       if i == 0:
@@ -319,14 +322,15 @@ def ReadDirData_parallel(
   return outDf
 
 
-# write sharded data wrt a partition column
-# the data is written in parallel for speed purposes
-# also at read time we can read data faster
 def Write_shardedData_parallel(
     df, fnPrefix, path, fnExten=".csv",
     partitionCol=None,
     shardNum=100, WriteF=WriteCsv,
     limitFileNum=None):
+
+  """ write sharded data wrt a partition column
+  the data is written in parallel for speed purposes
+  also at read time we can read data faster"""
 
   if partitionCol is None:
     partitionCol = "dummy_col"
@@ -477,7 +481,7 @@ def GenUsageDf_forTesting():
   df.loc[len(df)] = ['IR', '11', 'test', '2017-04-12', '2017-04-15 00:21:56',
                      '2017-04-15 00:22:00', 'browsingFeat', 'PHN']
   df.loc[len(df)] = ['IR', '12', 'base', '2017-04-16', '2017-04-15 00:21:56',
-                     '2017-04-15 00:22:00', 'randomWatchApp', 'PHN']
+                     '2017-04-15 00:22:00', 'watchFeat', 'PHN']
   df.loc[len(df)] = ['IR', '13', 'base', '2017-04-12', '2017-04-12 00:03:00',
                      '2017-04-12 00:04:00', 'PresFeat', 'COMP']
   df.loc[len(df)] = ['RU', '14', 'base', '2017-04-12', '2017-04-12 00:03:00',
@@ -499,11 +503,12 @@ def GenUsageDf_forTesting():
 
   return df
 
-## this subsets a df according to values given in the dict: condDict
-# the data columns are given in the dictionary keys
-# the possible values (a list of values) for each column are
-# given in the dict values
 def BuildCondInd(df, condDict):
+
+  """ subsets a df according to values given in the dict: condDict
+  the data columns are given in the dictionary keys
+  the possible values (a list of values) for each column are
+  given in the dict values """
 
   cols = condDict.keys()
   n = df.shape[0]
@@ -585,14 +590,14 @@ Mark(df[ind])
 '''
 
 ## check for two strings regex
-def IncludeBothStrRegex(s1, s2):
+def Regex_includesBothStr(s1, s2):
 
   out = '^(?=.*' + s1 + ')(?=.*' + s2 + ').*$'
 
   return out
 
 '''
-reg = IncludeBothStrRegex(' cat ', ' dog ')
+reg = Regex_includesBothStr(' cat ', ' dog ')
 print(reg)
 print(pd.Series(['cat-dog', ' cat hates dog ', 'tiger']).str.contains(reg))
 '''
@@ -600,7 +605,7 @@ print(pd.Series(['cat-dog', ' cat hates dog ', 'tiger']).str.contains(reg))
 ## rehashing a column (col)
 # the input is a dictionary of data frames with that column
 # we make sure the rehashing is fixed across data frames
-def RehashColDfDict(dfDict, col, newCol=None, omitCol=False):
+def RehashCol_dfDict(dfDict, col, newCol=None, omitCol=False):
 
   if newCol == None:
     newCol = col + '_hashed'
@@ -624,7 +629,7 @@ def RehashColDfDict(dfDict, col, newCol=None, omitCol=False):
   return newDfDict
 
 # it converts a float or string date to datetime
-def FloatOrStrToDate(x, format="%Y%m%d"):
+def FloatOrStr_toDate(x, format="%Y%m%d"):
 
   if (x == None) or (x == 'nan') or (x == np.nan):
     return pd.NaT
@@ -851,7 +856,8 @@ def SplitDfByCol(df, col):
   return dfDict
 
 ## calculates  value_counts() aka freq for combination of cols
-def CombinFreqDf(df, cols=None, countColName='cnt', propColName='prop (%)'):
+def CombinFreqDf(
+    df, cols=None, countColName='cnt', propColName='prop (%)'):
 
   if Type(df) == "Series":
     df = pd.DataFrame(df)
@@ -1171,10 +1177,86 @@ def BarPlotMultiple(df, xCol, yCols, rotation=45, pltTitle=''):
   plt.title(pltTitle + ': ' + xCol)
   plt.legend()
 
+import matplotlib.scale as mscale
+import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
+import matplotlib.ticker as ticker
+import numpy as np
 
-def Plt_compareFreq(
-    df, labelCol, compareCol=None, rotation=90,
-    pltTitle='', compareOrder=None, limitNum=None):
+class SquareRootScale(mscale.ScaleBase):
+  """
+  ScaleBase class for generating square root scale.
+  """
+
+  name = 'squareroot'
+
+  def __init__(self, axis, **kwargs):
+    mscale.ScaleBase.__init__(self)
+
+  def set_default_locators_and_formatters(self, axis):
+    axis.set_major_locator(ticker.AutoLocator())
+    axis.set_major_formatter(ticker.ScalarFormatter())
+    axis.set_minor_locator(ticker.NullLocator())
+    axis.set_minor_formatter(ticker.NullFormatter())
+
+  def limit_range_for_scale(self, vmin, vmax, minpos):
+    return  max(0., vmin), vmax
+
+  class SquareRootTransform(mtransforms.Transform):
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+
+    def transform_non_affine(self, a):
+      return np.array(a)**0.5
+
+    def inverted(self):
+      return SquareRootScale.InvertedSquareRootTransform()
+
+  class InvertedSquareRootTransform(mtransforms.Transform):
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+
+    def transform(self, a):
+      return np.array(a)**2
+
+    def inverted(self):
+      return SquareRootScale.SquareRootTransform()
+
+  def get_transform(self):
+    return self.SquareRootTransform()
+
+mscale.register_scale(SquareRootScale)
+
+
+## compares the freq of usages given in labelCol
+# and creates a joint distribution of labelCol given in x-axis
+# and compareCol given with colors
+# it either shows the joint probability (prop (%)) on y-axis
+# or it will show the freq divided by denomConstant if prop == False
+# labelCol: categorical var denoted in x-axis
+# compareCol: categorical var denoted by colors
+# countDistinctCols: what should be counted once, e.g. unit_id will count
+# each item with given unit_id once
+# prop = True, will calculates proportions, otherwise we divide counts by
+# denomConstant,
+# and if denomCountCols is given, we use it to count number of items
+# and divide by (denomConstant * itemCount)
+def PltCompare_bivarCategFreq(
+    df, labelCol, compareCol=None, countDistinctCols=None,
+    rotation=90, pltTitle='', compareOrder=None, limitNum=None,
+    prop=True, denomConstant=1.0, denomCountCols=None,
+    newColName="value", yScale=None):
+
+  if countDistinctCols is not None:
+    keepCols = [labelCol] + countDistinctCols
+    if compareCol is not None:
+      keepCols = keepCols + [compareCol]
+    if denomCountCols is not None:
+      keepCols = keepCols + denomCountCols
+
+    df = df[keepCols].drop_duplicates().reset_index()
 
   if compareCol is None:
     combinDf = CombinFreqDf(df[labelCol])
@@ -1182,21 +1264,35 @@ def Plt_compareFreq(
     combinDf = CombinFreqDf(df[[labelCol, compareCol]])
     hue = compareCol
 
-
   if limitNum is not None:
     combinDf = combinDf[:limitNum]
 
   if compareOrder is not None:
     hue_order = compareOrder
 
+  respCol = "prop (%)"
+
+  #Mark(denomConstant, "denomConstant")
+  if denomCountCols is not None:
+    itemCount = len(df[denomCountCols].drop_duplicates().reset_index())
+    denomConstant = 1.0 * denomConstant * itemCount
+  #Mark(denomConstant, "denomConstant")
+
+  if prop is False:
+    combinDf[newColName] = combinDf["cnt"] / denomConstant
+    respCol = newColName
+
   if compareCol is None:
-    sns.barplot(data=combinDf, x=labelCol, y="prop (%)")
-    locs, labels = plt.xticks()
-    out = plt.setp(labels, rotation=rotation, fontsize=10)
+    sns.barplot(data=combinDf, x=labelCol, y=respCol)
   else:
-    sns.barplot(data=combinDf, x=labelCol, hue=hue, y="prop (%)")
-    locs, labels = plt.xticks()
-    out = plt.setp(labels, rotation=rotation, fontsize=10)
+    sns.barplot(data=combinDf, x=labelCol, hue=hue, y=respCol)
+
+  locs, labels = plt.xticks()
+  out = plt.setp(labels, rotation=rotation, fontsize=10)
+  plt.legend(loc='upper right')
+
+  if yScale is not None:
+    plt.yscale(yScale)
 
   return combinDf
 
@@ -1205,13 +1301,20 @@ df = pd.DataFrame({
     "label":["cat", "dog", "cat", "dog", "dog", "cat", "cat", "dog"],
     "gender":["M", "F", "M", "F", "F", "F", "F", "M"]})
 
-Plt_compareFreq(
+PltCompare_bivarCategFreq(
     df=df, labelCol="label", compareCol="gender")
+
+PltCompare_bivarCategFreq(
+    df=df, labelCol="label", compareCol="gender",
+    prop=False, denomConstant=1.0, newColName="cnt per day")
+
 """
 
 ## make a boxplot for multiple columns Side by Side (Sbs, include mean with a star
-def BoxPlotDfColsSbS(df, cols=None, pltTitle='', xlab='', ylab='value',
-  boxColors=['darkkhaki', 'royalblue', 'r', 'g', 'y', 'o', 'b'], ylim=None):
+def BoxPlt_dfColsSbS(
+    df, cols=None, pltTitle='', xlab='', ylab='value',
+    boxColors=['darkkhaki', 'royalblue', 'r', 'g', 'y', 'o', 'b'],
+    ylim=None):
 
   from matplotlib.patches import Polygon
   data = []
@@ -1316,7 +1419,7 @@ def PltCols_wrtIndex(
 
   df2 = df.copy()
 
-  if cols == None:
+  if cols is None:
     cols = list(df2.columns)
 
   if categCol is not None:
@@ -1335,13 +1438,13 @@ def PltCols_wrtIndex(
   num = len(categs)
   x = range(num)
 
-  if colorList == None:
+  if colorList is None:
     colorList = [
         'r', 'g', 'm', 'y', 'c', 'darkkhaki', 'royalblue',
         'darkred', 'crimson', 'darkcyan', 'gold', 'lime', 'black',
         'navy', 'deepskyblue', 'k']
 
-  if alphaList == None:
+  if alphaList is None:
     alphaList = [0.7] * len(cols)
   stretch = 4 * len(cols)
   x = stretch * np.array(x)
@@ -1455,7 +1558,7 @@ PltCols_wrtIndex(
 # for a category (given in categCol)
 # each distribution is defined on a set of labels
 # the distributions are given in each column
-def PlotStackedDist_perCateg(
+def Plt_stackedDist_perCateg(
     df, categCol, cols=None, labels=None,
     sortCols=None, figsize=(10, 5), mainText=''):
 
@@ -1499,7 +1602,7 @@ df0 = pd.DataFrame({'country':['JP', 'US', 'FR'],
                     'col4':np.random.uniform(low=0.0, high=100.0, size=3)})
 
 
-PlotStackedDist_perCateg(
+Plt_stackedDist_perCateg(
     df=df0, categCol='country', cols=['col1', 'col2', 'col3', 'col4'], labels=None,
     sortCols=None, figsize=(10, 5), mainText='')
 
@@ -1509,7 +1612,8 @@ PlotStackedDist_perCateg(
 # for various classes given in compareCol
 # first it pivots the data and then plots side by side
 def PivotPlotWrt(
-  df, pivotIndCol, compareCol, valueCol, cols=None, pltTitle='', sizeAlpha=0.75):
+    df, pivotIndCol, compareCol, valueCol,
+    cols=None, pltTitle='', sizeAlpha=0.75):
 
   dfPivot = df.pivot(index=pivotIndCol, columns=compareCol, values=valueCol)
   dfPivot = dfPivot.fillna(0)
@@ -1633,7 +1737,8 @@ def FreqPlot_cutCol(u, pltTitle='', figSize=[5, 5]):
   df0 = OrderDf_cutCol(df=df0, cutCol='label')
   df0.columns = ['value', 'label', 'order']
   df0 = df0.sort_values('order')
-  BarPlot(y=df0['value'], yLabels=df0['label'], pltTitle=pltTitle, figSize=figSize)
+  BarPlot(
+      y=df0['value'], yLabels=df0['label'], pltTitle=pltTitle, figSize=figSize)
 
   return df0
 
@@ -1733,7 +1838,8 @@ def QuantileFcn(q):
 
   return F
 
-def PlotQuantilesPerSlice(df, sliceCol, respCol, gridNum=100.0, pltTitle=''):
+def Plt_quantilesPerSlice(
+    df, sliceCol, respCol, gridNum=100.0, pltTitle=''):
 
   slices = list(set(df[sliceCol].values))
   outDict = {}
@@ -1742,24 +1848,23 @@ def PlotQuantilesPerSlice(df, sliceCol, respCol, gridNum=100.0, pltTitle=''):
     x = df[df[sliceCol] == sl][respCol].values
     grid = list(
         gridNum * np.linspace(
-            start=1.0/gridNum,
-            stop=(1 - 1.0/gridNum),
-            num=gridNum))
+            start=1.0/float(gridNum),
+            stop=(1 - 1.0/float(gridNum)),
+            num=int(gridNum)))
     q = QuantileFcn(grid)(x)
     outDict[sl] = q
     plt.plot(grid, q, label=sl)
 
   plt.legend()
   plt.title(pltTitle)
-  outDf = pd.DataFrame(outDict)
 
-  return outDf
+  return pd.DataFrame(outDict)
 
 '''
 df = pd.DataFrame({
   'value':[1, 1, 1, 2, 3, 4, 2, 2, 2],
   'categ':['a', 'a', 'b', 'b', 'b', 'a', 'a', 'b', 'a']})
-PlotQuantilesPerSlice(df=df, sliceCol='categ', respCol='value', pltTitle='')
+Plt_quantilesPerSlice(df=df, sliceCol='categ', respCol='value', pltTitle='')
 '''
 
 ## takes a vector of labels, eg pandas series
@@ -1777,9 +1882,9 @@ def GenFreqTable(x, rounding=None):
 
   outDict = {'label':labels, 'freq':freqValues, 'prop':propValues}
   outDf = pd.DataFrame(outDict)
-  outDf = outDf[['label', 'freq', 'prop']]
 
-  return outDf
+  return outDf[['label', 'freq', 'prop']]
+
 
 '''
 x = pd.Series(['a', 'a', 'b', 'b', 'c'])
@@ -1806,9 +1911,8 @@ def CategDistbnDf(df, indCols, categCol, rounding=None):
   outDf = g.aggregate({categCol:F1 , categCol + '_freq':F2,
                        categCol + '_prop':F3})
   outDf = outDf.reset_index()
-  outDf2 = outDf[BringElemsToFront(outDf.columns, indCols + [categCol])]
 
-  return outDf2
+  return outDf[BringElemsToFront(outDf.columns, indCols + [categCol])]
 
 '''
 df = pd.DataFrame({
@@ -1928,7 +2032,7 @@ def LabelDistbn(
     pltTitle = labelCol + " distbn"
   plt.title(pltTitle, fontsize=20, fontweight='bold')
 
-  return(out)
+  return out
 
 ##
 def LabelDistbn_perSlice(
@@ -2228,7 +2332,7 @@ if __name__=='__main__':
 '''
 
 ## takes a dictionary of lists to one string
-def DictOfListsToString(
+def DictOfLists_toString(
     d,
     dictElemSepr='__',
     listElemSepr='_',
@@ -2254,16 +2358,16 @@ def DictOfListsToString(
 
 '''
 d = {'z':[2], 'd':[1], 'e':[2]}
-DictOfListsToString(d)
+DictOfLists_toString(d)
 
 d = {'z':[2], 'd':[1], 'e':None}
-DictOfListsToString(d)
+DictOfLists_toString(d)
 
 condDict = {'form_factor':['PHN']}
 condDict = {'form_factor':None}
 condDict = {'form_factor':['PHN'], 'country':['JP']}
 condDict = None
-condStr = DictOfListsToString(condDict, dictElemSepr='__', listElemSepr='_')
+condStr = DictOfLists_toString(condDict, dictElemSepr='__', listElemSepr='_')
 '''
 
 ## plotting confidence intervals given in each row
@@ -2271,12 +2375,12 @@ condStr = DictOfListsToString(condDict, dictElemSepr='__', listElemSepr='_')
 def PlotCI(df, colUpper, colLower, y=None, col=None, ciHeight=0.5,
            color='grey', labelCol=None, pltLabel=''):
 
-  if y == None:
+  if y is None:
     y = range(len(df))
 
   minCiWidth = (df[colUpper] - df[colLower]).min()
 
-  if col != None:
+  if col is not None:
     ## following was troubling in log scale,
     # the width of the lines were changing in visualization (not desired)
     '''
@@ -2331,7 +2435,7 @@ def PlotCI(df, colUpper, colLower, y=None, col=None, ciHeight=0.5,
         alpha=0.6,
         label=pltLabel)
 
-  if labelCol != None:
+  if labelCol is not None:
     plt.yticks(y, df[labelCol].values, rotation='vertical');
 
 '''
@@ -2454,7 +2558,8 @@ res = PlotCIWrt(
 # satisfy conditions
 # any combination of keys which passes the condition at least once will be
 # considered as satisfy
-def PartDfByKeysWrtCond(df, keyCols, condDict, passColName='passesCond'):
+def PartDf_byKeyCols_wrtCond(
+    df, keyCols, condDict, passColName='passesCond'):
 
   keyDfUnique = df[keyCols].drop_duplicates()
   ind = BuildCondInd(df=df, condDict=condDict)
@@ -2475,7 +2580,7 @@ df = pd.DataFrame({
     'device':['pixel', 'sams', 'lg', 'lg', 'sams', 'pixel', 'nex', 'pixel'],
     'country':['us', 'us', 'jp', 'jp', 'kr', 'kr', 'in', 'in']})
 
-outDict = PartDfByKeysWrtCond(
+outDict = PartDf_byKeyCols_wrtCond(
   df=df, keyCols=['user_id'], condDict={'device':['pixel'],
   'country':['us', 'in']}, passColName='passesCond')
 
@@ -2485,7 +2590,7 @@ Mark(outDict['keyDfLabeled'])
 '''
 
 ## create good pandas boxplots
-def PandasBoxPlot(
+def PandasBoxPlt(
     df, col, by, ylim=None, yscale=None, pltTitle=None, figSize=None):
 
   # demonstrate how to customize the display different elements:
@@ -2566,7 +2671,7 @@ def Plt_compareUsageSet(
 
   if bpPltTitle is None:
     bpPltTitle = "# of " + usageCol + " across " + unitCol + "s"
-  PandasBoxPlot(
+  PandasBoxPlt(
       df=dfCount, col=usageCol, by=compareCol,
       ylim=[0, None], pltTitle=bpPltTitle)
 
@@ -2598,12 +2703,15 @@ def BirthYear_toAgeCateg(x, currentYear=None):
 
   return ">51"
 
-def BirthYear_toAge(x, currentYear=None):
+def BirthYear_toAge(x, currentYear=None, minBirthYear=1940):
 
   if currentYear is None:
     currentYear = datetime.datetime.now().year
 
-  if x is None or x == "" or x == 0 or math.isnan(x) or x < 1940:
+  if x is None or x == "" or x == 0 or math.isnan(x):
+    return None
+
+  if x < minBirthYear or x > currentYear:
     return None
 
   x = float(x)
@@ -2615,7 +2723,8 @@ BirthYear_toAgeCateg(1900)
 """
 
 
-def Plt_compareDensity(df, compareCol, valueCol, compareValues=None):
+def Plt_compareDensity(
+    df, compareCol, valueCol, compareValues=None):
 
   if compareValues is None:
     compareValues = set(df[compareCol].values)

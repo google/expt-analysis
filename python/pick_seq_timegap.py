@@ -22,7 +22,7 @@ with the same "products" or varying products
 """
 
 ## Getting the distribution of timeGaps between
-# events of same type and differing ones (eg randomWatchApp -> randomWatchApp vs randomWatchApp -> search)
+# events of same type and differing ones (eg watchFeat -> watchFeat vs watchFeat -> search)
 # df is the dataframe
 # respCol is the property/event we like to track
 # timeCol is the column with the time stamp

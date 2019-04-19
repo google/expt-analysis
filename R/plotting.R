@@ -220,7 +220,7 @@ PltCompare_categDist = function(df, xCol, fillCol) {
 
 
 # plots a bivariate categorical variable
-PltStack_BivarCateg = function(df, xCol, fillCol) {
+PltStack_bivarCateg = function(df, xCol, fillCol) {
 
   dt = data.table(df)
 

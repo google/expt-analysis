@@ -163,11 +163,11 @@ def H(s):
 
 H('editingFeat>photoFeat')
 H('browsingFeat>photoFeat')
-H('editingFeat>randomWatchApp')
-H('randomWatchApp>editingFeat')
-H('photoFeat>randomWatchApp')
-H('randomWatchApp>photoFeat')
-H('randomWatchApp>randomWatchApp')
+H('editingFeat>watchFeat')
+H('watchFeat>editingFeat')
+H('photoFeat>watchFeat')
+H('watchFeat>photoFeat')
+H('watchFeat>watchFeat')
 '''
 
 ## calculates a "triple probability"
@@ -287,8 +287,8 @@ def H(s):
 
 H('editingFeat>photoFeat>editingFeat')
 H('browsingFeat>photoFeat>browsingFeat')
-H('editingFeat>randomWatchApp>editingFeat')
-H('randomWatchApp>editingFeat>randomWatchApp')
+H('editingFeat>watchFeat>editingFeat')
+H('watchFeat>editingFeat>watchFeat')
 '''
 
 def SeqQuadOddsFcn(
@@ -423,11 +423,11 @@ def H(s):
 
 H('editingFeat>photoFeat>editingFeat>photoFeat')
 H('browsingFeat>photoFeat>browsingFeat>photoFeat')
-H('editingFeat>randomWatchApp>editingFeat>randomWatchApp')
-H('randomWatchApp>editingFeat>randomWatchApp>editingFeat')
+H('editingFeat>watchFeat>editingFeat>watchFeat')
+H('watchFeat>editingFeat>watchFeat>editingFeat')
 H('editingFeat>mailingFeat>locFeat>browsingFeat_IMAGES')
-H('randomWatchApp_MUSIC>PresFeat>randomWatchApp_MUSIC>SIGN_IN')
-H('randomWatchApp>browsingFeat_IMAGES>PresFeat>randomWatchApp_MUSIC')
+H('watchFeat_MUSIC>PresFeat>watchFeat_MUSIC>SIGN_IN')
+H('watchFeat>browsingFeat_IMAGES>PresFeat>watchFeat_MUSIC')
 H('PresFeat>browsingFeat_IMAGES>PresFeat>exploreFeat')
 
 seqDf2 = seqDf[seqDf['seq'].apply(lambda x: x.count('>')) == 3]
@@ -563,7 +563,7 @@ def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 
-pair = [browsingFeat, 'randomWatchApp']
+pair = [browsingFeat, 'watchFeat']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(subSet=pair)(df)['user_id'].value_counts())
 
@@ -593,7 +593,7 @@ def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 
-pair = [browsingFeat, 'randomWatchApp']
+pair = [browsingFeat, 'watchFeat']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(pair)(df)['user_id'].value_counts())
 
@@ -614,7 +614,7 @@ def H(pair):
 
 H(['photoFeat', browsingFeat])
 H([browsingFeat, 'photoFeat'])
-H(['editingFeat', 'randomWatchApp'])
+H(['editingFeat', 'watchFeat'])
 bsSize = 10
 
 out1 = SeqConfIntDf(df=seqDf, seqCol='seq', Fcn=SeqTransOddsFcn,
@@ -774,7 +774,7 @@ SubsetDfFcn0 = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod', partitionCols=
 def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
-pair = [browsingFeat, 'randomWatchApp']
+pair = [browsingFeat, 'watchFeat']
 Mark(AddMembershipCol(pair))
 Mark(SubsetDfFcn0(pair)(df)['user_id'].value_counts())
 seqDf = CreateSeqTableContains(df=df, partitionCols=['user_id'], respCol='prod',
@@ -792,7 +792,7 @@ def H(pair):
 
 H(['photoFeat', browsingFeat])
 H([browsingFeat, 'photoFeat'])
-H(['editingFeat', 'randomWatchApp'])
+H(['editingFeat', 'watchFeat'])
 bsSize = 10
 Fcn = SeqTransOddsFcn
 
@@ -832,7 +832,7 @@ def SubsetDfFcn(x):
   l = x.split('>')
   return(SubsetDfFcn0(l))
 
-basket = [browsingFeat, 'randomWatchApp', 'exploreFeat', 'editingFeat']
+basket = [browsingFeat, 'watchFeat', 'exploreFeat', 'editingFeat']
 Mark(AddMembershipCol(basket))
 Mark(SubsetDfFcn0(basket)(df)['user_id'].value_counts())
 
@@ -854,11 +854,11 @@ def H(x):
 
 H('editingFeat>photoFeat>editingFeat>photoFeat')
 H('browsingFeat>photoFeat>browsingFeat>photoFeat')
-H('editingFeat>randomWatchApp>editingFeat>randomWatchApp')
-H('randomWatchApp>editingFeat>randomWatchApp>editingFeat')
+H('editingFeat>watchFeat>editingFeat>watchFeat')
+H('watchFeat>editingFeat>watchFeat>editingFeat')
 H('editingFeat>mailingFeat>locFeat>browsingFeat_IMAGES')
-H('randomWatchApp_MUSIC>PresFeat>randomWatchApp_MUSIC>SIGN_IN')
-H('randomWatchApp>browsingFeat_IMAGES>PresFeat>randomWatchApp_MUSIC')
+H('watchFeat_MUSIC>PresFeat>watchFeat_MUSIC>SIGN_IN')
+H('watchFeat>browsingFeat_IMAGES>PresFeat>watchFeat_MUSIC')
 H('PresFeat>browsingFeat_IMAGES>PresFeat>exploreFeat')
 
 seqDf2 = seqDf[seqDf['seq'].apply(lambda x: x.count('>')) == 3]

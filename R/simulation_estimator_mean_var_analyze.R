@@ -25,8 +25,8 @@ Src = function() {
 
   files=c(
       "data_analysis.R",
-      "user_analysis.R",
-      "user_analysis_use_case.R",
+      "unit_analysis.R",
+      "unit_analysis_use_case.R",
       "plotting.R",
       "clustering.R"))
 

@@ -1204,7 +1204,7 @@ def Gen_seqData_FnTableNames(
 
   timeGapStr = str(timeGapDict['value']) + timeGapDict['scale']
 
-  condString = DictOfListsToString(
+  condString = DictOfLists_toString(
       condDict, dictElemSepr='_', listElemSepr='_')
   dataString = '_'.join(dataNamesList)
   fn = dataString
@@ -1338,7 +1338,7 @@ def WriteSeqTable_forSql(
       'countDistinctCols': [';'.join(countDistinctCols)],
       'seqCol': [seqCol],
       'noShifted': [noShifted],
-      'condDict':[DictOfListsToString(condDict, noneString='None')],
+      'condDict':[DictOfLists_toString(condDict, noneString='None')],
       'trim':[trim],
       'seqPropCols':[';'.join(seqPropCols)],
       'sliceCols':[';'.join(sliceCols)],
@@ -1388,9 +1388,9 @@ def Write_sigSeqDf(
       del sigDf[col]
   fn0 = sqlTableName.replace('.', '_') + '_significant_seq'
   if len(regDict) > 0:
-    fn0 = fn0 + '_regex_' + DictOfListsToString(regDict)
+    fn0 = fn0 + '_regex_' + DictOfLists_toString(regDict)
   if len(condDict) > 0:
-    fn0 = fn0 + '_cond_' + DictOfListsToString(condDict)
+    fn0 = fn0 + '_cond_' + DictOfLists_toString(condDict)
   fn = path + fn0 + '.csv'
 
   sigDf['seq'] = sigDf['seq'].map(lambda x: x.replace('>', ' > '))

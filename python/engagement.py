@@ -45,6 +45,7 @@ def CalcDau(
 
 ## calculate the number of events
 def CalcEvents(df, valueCol, pltTitle='', pltIt=False, dateCol='date'):
+
   df = df[[dateCol, valueCol]]
   g = df.groupby([dateCol])
   df2 = g.aggregate(sum)
@@ -55,7 +56,8 @@ def CalcEvents(df, valueCol, pltTitle='', pltIt=False, dateCol='date'):
     plt.setp(labels, rotation=90, fontsize=10)
     plt.title(pltTitle, fontsize=15)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-  return(dau)
+
+  return dau
 
 
 ## we consider the following temporal pattern:
@@ -68,10 +70,10 @@ def CalcDailyRetention(
   df, inactiveDf, prePeriod, inactivePeriod=None,
   inactiveLength=None, pltIt=False):
 
-  prePeriod = [FloatOrStrToDatetime(x) for x in prePeriod]
+  prePeriod = [FloatOrStr_toDatetime(x) for x in prePeriod]
 
   if inactivePeriod != None:
-    inactivePeriod = [FloatOrStrToDatetime(x) for x in inactivePeriod]
+    inactivePeriod = [FloatOrStr_toDatetime(x) for x in inactivePeriod]
   else:
     base = prePeriod[0] -  datetime.timedelta(days=1)
     inactivePeriod = [base - datetime.timedelta(days=x) for x in range(0, inactiveLength)]
@@ -109,7 +111,7 @@ def DateIntervalToGrid(interval):
 
 '''
 postPeriod = ['20161023', '20161028']
-postPeriod =  map(FloatOrStrToDatetime, postPeriod)
+postPeriod =  map(FloatOrStr_toDatetime, postPeriod)
 print(DateIntervalToGrid(postPeriod))
 '''
 
@@ -118,9 +120,9 @@ def CalcRetention(
     postPeriod, interval=True,
     userCol='user_id', dateCol='date', pltIt=False):
 
-  inactivePeriod = [FloatOrStrToDatetime(x) for x in inactivePeriod]
-  prePeriod = [FloatOrStrToDatetime(x) for x in prePeriod]
-  postPeriod = [FloatOrStrToDatetime(x) for x in postPeriod]
+  inactivePeriod = [FloatOrStr_toDatetime(x) for x in inactivePeriod]
+  prePeriod = [FloatOrStr_toDatetime(x) for x in prePeriod]
+  postPeriod = [FloatOrStr_toDatetime(x) for x in postPeriod]
 
   if interval:
     if len(inactivePeriod) == 2:
@@ -224,7 +226,8 @@ def CalcRetentionOverTime(
     out = CalcRetentionDate(df=df, inactiveDf=inactiveDf, lastDate=lastDate)
     outList.append(out)
   df = pd.DataFrame({'date': dtGrid, 'value': outList})
-  return(df)
+
+  return df
 
 # Calculate EngIn7 and metrics like that,
 # which aggregate from a period up to the "date"

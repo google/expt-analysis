@@ -242,9 +242,9 @@ GenModFcn = function(modNum) {
   return(F)
 }
 
-## this function create a wide format correponding to the given pair
+## this function create a wide format corresponding to the given pair
 # e.g. for the (expt, cont) pair
-# from the wide format, it then calcuates a diff between the specified pair
+# from the wide format, it then calculates a diff between the specified pair
 DiffDf = function(
     df,
     compareCol,
@@ -1076,7 +1076,8 @@ PredBased_Diffs = function(
   return(list(
       "aggDiff_contDataOnly"=F(modelPred_data[["userLevMeans_contDataOnly"]]),
       "aggDiff_withTreatData"=F(modelPred_data[["userLevMeans_withTreatData"]]),
-      "aggDiff_allDataNoExptId"=F(modelPred_data[["userLevMeans_allDataNoExptId"]])))
+      "aggDiff_allDataNoExptId"=F(
+          modelPred_data[["userLevMeans_allDataNoExptId"]])))
 }
 
 # check  imbalance in predictors in expt arms
@@ -1185,7 +1186,8 @@ Check_adjustmentBalance = function(
   return(l)
 }
 
-## Simple metrics calculation method which is based on diffs between treat and cont
+## Simple metrics calculation method which is based on diffs
+# between treat and cont
 # on the same valueCol. e.g.  "sum amount on treat" / "sum amount on expt"
 # AggF
 CalcDiffMetrics_userDt = function(
@@ -1645,7 +1647,7 @@ CalcAdjMetrics_fromUserDt = function(
       F=sum)
 
   ## model mean aggregates
-  #TODO: rezani: we could replace that with all data for testing
+  #TODO: Reza Hosseini: we could replace that with all data for testing
   modelPred_data = PredBased_userLevelMeans(
       userDt_fromUsage_obs=userDt_fromUsage_obs,
       valueCols=valueCols,
@@ -1792,7 +1794,7 @@ CalcMetricCis_withBuckets = function(
       "adjDiff_allDataNoExptId")
 
   CalcMetrics = function(x) {
-    Src()
+    #Src()
 
     if (ci_method == "simple_bucket") {
       dt2 = dt[bucket == x]
@@ -2340,4 +2342,89 @@ BirthYear_toAgeCateg = function(x, currentYear) {
   }
 
   return(">51")
+}
+
+
+
+## calculates pre-post metrics
+Calc_prePostMetrics = function(
+    dt, valueCol, prePostCol, compareCol, comparePair,
+    AggF=mean) {
+
+  aggDt = dt[ , AggF(get(valueCol)), by=mget(c(compareCol, prePostCol))]
+
+  colnames(aggDt) = c(compareCol, prePostCol, valueCol)
+
+  metricsDt = dcast(
+      aggDt,
+      as.formula(paste0(compareCol, "~", prePostCol)),
+      value.var=valueCol)
+
+  metricsDt = metricsDt[ , mget(c(compareCol, "pre", "post"))]
+
+  colnames(metricsDt) = c(compareCol, paste0(valueCol, c( "_pre", "_post")))
+
+  prePostValueCol = paste0(valueCol, "_post_over_pre")
+
+  metricsDt[ , prePostValueCol] = (
+      metricsDt[ , get(paste0(valueCol, "_post"))] /
+      metricsDt[ , get(paste0(valueCol, "_pre"))])
+
+  prePostMetricsDt = metricsDt
+
+  metricsDt[ , "dummy_var"] = "1"
+
+  compareMetricsDt = dcast(
+      metricsDt,
+      as.formula(paste0("dummy_var ~", compareCol)),
+      value.var = c(prePostValueCol, paste0(valueCol, c( "_pre", "_post"))))
+
+  compareMetricsDt = DtSubsetCols(compareMetricsDt, dropCols="dummy_var")
+
+  cols = setdiff(colnames(metricsDt), c("dummy_var", compareCol))
+  compareStr = paste0(comparePair[2], "_over_", comparePair[1])
+
+
+  for (col in cols) {
+
+    col1 = paste0(col, "_", comparePair[1])
+    col2 = paste0(col, "_", comparePair[2])
+
+    newCol = paste0(col, "_", compareStr)
+
+    compareMetricsDt[ , newCol] = (
+
+      compareMetricsDt[ , get(col2)] / compareMetricsDt[ , get(col1)]
+
+    )
+
+  }
+
+  return(list(
+      "prePostDt"=prePostMetricsDt, "compareDt"=compareMetricsDt))
+
+}
+
+
+TestCalc_prePostMetrics = function() {
+
+  k = 1000
+  df = setNames(
+    data.frame(matrix(ncol=4, nrow=k)),
+    c("id", "pre_post", "expt_id", "value"))
+
+  df[ , "id"] = 1:k
+  df[ , "pre_post"] = c(rep("pre", k/2), rep("post", k/2))
+  df[ , "expt_id"] = sample(c("treat", "cont"), k, replace=TRUE)
+  df[ , "value"] = c(abs(rnorm(k/2)) + 5, abs(rnorm(k/2)))
+
+
+  res = Calc_prePostMetrics(
+      dt=data.table(df),
+      valueCol="value",
+      prePostCol="pre_post",
+      compareCol="expt_id",
+      comparePair=c("cont", "treat"),
+      AggF=mean)
+
 }

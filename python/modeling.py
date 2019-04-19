@@ -582,30 +582,31 @@ def FitPredModel(
 
   yTrain = y.iloc[indTrain]
   yValid = y.iloc[indValid]
-  Xtrain = X.iloc[indTrain]
-  Xvalid = X.iloc[indValid]
+  xTrain = X.iloc[indTrain]
+  xValid = X.iloc[indValid]
   modSummary = None
   resMod = None
   UncertF = None
   uncert = None
 
   if model == 'linear':
-    mod = sm.OLS(yTrain, Xtrain)
+    mod = sm.OLS(yTrain, xTrain)
     resMod = mod.fit()
     ModPredF = resMod.predict
     modSummary = resMod.summary()
-    if (printSummary):
+
+    if printSummary:
       print(resMod.summary())
       print('*******')
 
   if model == 'rf':
     from sklearn.ensemble import RandomForestRegressor
-    Xtrain = Xtrain.as_matrix()
-    Xvalid = Xvalid.as_matrix()
+    xTrain = xTrain.as_matrix()
+    xValid = xValid.as_matrix()
     yTrain = np.array(yTrain)
     yValid = np.array(yValid)
     rf = RandomForestRegressor()
-    resMod = rf.fit(Xtrain,yTrain)
+    resMod = rf.fit(xTrain,yTrain)
     ModPredF = resMod.predict
     yTrain = pd.Series(yTrain)
     yValid = pd.Series(yValid)
@@ -624,8 +625,8 @@ def FitPredModel(
       return ApplyFcnRow(x, fcn=PredF)
     resMod = None
 
-  yFit = ModPredF(Xtrain)
-  yPred = ModPredF(Xvalid)
+  yFit = ModPredF(xTrain)
+  yPred = ModPredF(xValid)
   yFit = pd.Series(yFit)
   yPred = pd.Series(yPred)
 
@@ -661,12 +662,24 @@ def FitPredModel(
   predRMSE = math.sqrt((abs(predErr)**2).mean())
 
   return {
-      'mod':resMod, 'ModPredF':ModPredF,
-      'summary':modSummary, 'yFit':yFit, 'yTrain':yTrain, 'yValid':yValid,
-      'UncertF':UncertF, 'uncert':uncert,
-      'yPred':yPred, 'Xtrain':Xtrain, 'Xvalid':Xvalid, 'ExpalnF':ExpalnF,
-      'fitR2':fitR2, 'predR2':predR2, 'predMAE':predMAE, 'predRMSE':predRMSE,
-      'fitMAE':fitMAE, 'fitRMSE':fitRMSE}
+      'mod':resMod,
+      'ModPredF':ModPredF,
+      'summary':modSummary,
+      'yFit':yFit,
+      'yTrain':yTrain,
+       'yValid':yValid,
+      'UncertF':UncertF,
+      'uncert':uncert,
+      'yPred':yPred,
+      'xTrain':xTrain,
+      'xValid':xValid,
+      'ExpalnF':ExpalnF,
+      'fitR2':fitR2,
+      'predR2':predR2,
+      'predMAE':predMAE,
+      'predRMSE':predRMSE,
+      'fitMAE':fitMAE,
+      'fitRMSE':fitRMSE}
 
 '''
 # example:

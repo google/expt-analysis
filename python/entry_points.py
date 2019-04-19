@@ -124,7 +124,9 @@ def FindPrev(df,
       'ts2': None}
 
   dfUser = df[df[userCol] == user]
-  dfUser = Concat_stringColsDf(df=dfUser, cols=condCols, colName="cond", sepStr='-')
+  dfUser = Concat_stringColsDf(
+      df=dfUser, cols=condCols, colName="cond", sepStr='-')
+
   out = FindPrev0(
       df=dfUser,
       condCols=condCols,

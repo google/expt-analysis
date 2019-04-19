@@ -57,7 +57,7 @@ srcFns = [path + 'expt-analysis/python/data_analysis.py',
           path + 'expt-analysis/python/sequential_data.py',
           path + 'expt-analysis/python/sequences_statistics_v1.py',
           path + 'expt-analysis/python/sequences_statistics_v2.py',
-          path + 'expt-analysis/python/user_analysis.py']
+          path + 'expt-analysis/python/unit_analysis.py']
 
 for fn in srcFns: exec(GetContent(fn=fn))
 

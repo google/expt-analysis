@@ -44,7 +44,7 @@ PART 2: calculates per item metrics with distributions
 in the slice and confidence intervals for the means
 as well as confidence intervals for difference of means
 PART 3: functions to partition data
-e.g. only take subset of data where the users have randomWatchApp at least once
+e.g. only take subset of data where the users have watchFeat at least once
 during the whole period
 """
 
@@ -85,12 +85,14 @@ CountItems_perSlice(
 # finds the total (e.g. duration or money) given in valueCol
 # for a usage (usageCols) and num of usages per item (user)
 # then merges the two data sets to calculate per item (e.g. user/day) metrics
-# IMPORTANT: total number of items is calculated per slice, not per slice and usage
+# IMPORTANT: total number of items is calculated per slice,
+# not per slice and usage
 # so we are not calculating the usage count mean for active users only
 # its calculated for active and non-active users
 # another way to do this is:
 # add an occ column to data df[ , 'usage_occ'] = 1
-# for each slice, if usage occurs for some item but not for others for that slice
+# for each slice, if usage occurs for some item
+# but not for others for that slice
 # add slice, item, usage to data and assign the usage_occ to be zero
 # adjustment is possible for denominators
 def Calc_perItemMetrics(
@@ -1826,6 +1828,14 @@ res = BalanceSampleSize(
 Mark(res['infoDf'])
 '''
 
+## This will make sure that the sample size is the same
+# for each (multi-dimensional) value of "wrtCols" across
+# sliceCols. For example for if wrtCols = [country], sliceCols = [expt_id]
+# for Japan we will have same number of
+# units on base and test arms eg 2 and 2
+# and for US we will have same number eg 3 and 3.
+# TODO: Reza Hosseini resolve BUG: if RU has 3 items on base and no items on
+# test. RU base will be kept at 3. Maybe RU has to be dropped.
 def BalanceSampleSize_wrtCols(
     df,
     sliceCols,
@@ -1868,9 +1878,9 @@ def BalanceSampleSize_wrtCols(
   infoDf = g.agg({'item_combin':{'_count':lambda x: len(set(x))}})
   infoDf.columns = [''.join(col).strip() for col in infoDf.columns.values]
 
-  Mark(infoDf)
+  subDf = fullDf[fullDf[boolColName]].reset_index(drop=True)
 
-  return fullDf
+  return {"df":fullDf, "infoDf":infoDf}
 
 '''
 df = GenUsageDf_forTesting()
@@ -1923,7 +1933,7 @@ def UserPerDate_simple(
     df0 = Concat_stringColsDf(df0, cols=usageCols, colName=None, sepStr='-')
   usageCol = '-'.join(usageCols)
 
-  condStr = DictOfListsToString(
+  condStr = DictOfLists_toString(
       condDictPre,
       dictElemSepr='__',
       listElemSepr=',',

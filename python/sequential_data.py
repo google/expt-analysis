@@ -18,7 +18,7 @@
 """ Functions to to generate sequential data from timestamped data
 and work with sequential data
 we allow you to define what dimensions each sequence element contains
-e.g. we can have a one-dimensional sequence of the form: browsingFeat>mailingFeat>randomWatchApp
+e.g. we can have a one-dimensional sequence of the form: browsingFeat>mailingFeat>watchFeat
 or a 3-dim sequence of the form browsingFeat-COMP-VIEW>mailingFeat-PHN-READ
 this code includes function for augmenting the data by shifting sequences
 this code includes methods to add useful slicing methods to sequences when
@@ -358,7 +358,7 @@ SubsetDfFcn = ElemsExist_subsetDfFcn(setDf=setDf, setCol='prod',
 partitionCols=['user_id'])
 SubsetDf = SubsetDfFcn(pair)
 
-pair = ['randomWatchApp', 'browsingFeat']
+pair = ['watchFeat', 'browsingFeat']
 Mark(AddPairMembership(pair))
 Mark(SubsetDf(df=df)['user_id'].value_counts())
 '''
