@@ -62,7 +62,7 @@ Two methods are used to calculate CIs:
 
 `source(paste0(codePath,"plotting.R"))`
 
-`source(paste0(codePath,"user_analysis.R"))`
+`source(paste0(codePath,"unit_analysis.R"))`
 
 `library("data.table")`
 
