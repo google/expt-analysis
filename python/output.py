@@ -195,3 +195,26 @@ def DfLatexTable(df):
   table = table + '\hline' + '\n'
 
   return table
+
+## creates a latex file which would create a pdf after running
+# the pdf has all the photos found in path/figs/
+# the latex files will be created in path with the name latexFn
+def ConcatPhotos_viaLatex(path, latexFn): 
+    figsPath = path + "/figs/"
+    files = os.listdir(figsPath)
+    
+    fn = path + latexFn
+    LatexSkin(fn=fn, docType='article', figsPath='{figs/}', latexInputFn='Input.tex')
+    latexFn0 = path + "input.tex"
+    for file in files:
+        LatexFig(
+            latexFn=latexFn0,
+            figFn=file,
+            figLabel=None, figCaption=None, scale=str(0.5))
+
+"""        
+path = "/Users/rz13/Dropbox/Reza_Docs/morgage_application2/rent/"
+latexFn = "rent_boa_copies.tex"
+ConcatPhotos_viaLatex(path=path, latexFn=latexFn)
+"""
+
