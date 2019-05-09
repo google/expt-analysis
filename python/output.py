@@ -26,7 +26,7 @@ def LatexSkin(fn, docType='article', figsPath='{figs/}',
   latex1 = '\\documentclass{' + docType + '}'
   latex2 = ('\n \\usepackage{enumerate,amsmath,graphics,amssymb,graphicx,' +
             'amscd,amscd,amsbsy,multirow,float,booktabs,verbatim,xy,' +
-            'geometry,import} \n'
+            'geometry,import} \n')
   latex3 = '\n \\graphicspath{' + figsPath + '} \n'
   latex4 = ('\n \\begin{document} \n \\input{' + latexInputFn +
             '} \n \\end{document}')
