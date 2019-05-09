@@ -61,17 +61,16 @@ def WriteLatexCenter(fn, text):
         f.write('\\end{center} \n ')
 
 ### this function adds a figure with caption and label to a latex file
-def LatexFig(latexFn, figFn, figLabel, figCaption, scale=str(0.5),
-             skipCaption=False, skipLabel=False):
-    with open(latexFn, 'a') as f:
-        f.write('\n \\begin{figure}[H] \n')
-        f.write('\\centering \n')
-        f.write('\\includegraphics[scale=' + scale + ']{' + figFn + '} \n')
-        if (skipCaption == False):
-            f.write('\\caption{' + figCaption + '} \n')
-        if (skipLabel == False):
-            f.write('\\label{' + figLabel + '} \n')
-        f.write('\\end{figure} \n')
+def LatexFig(latexFn, figFn, figLabel=None, figCaption=None, scale=str(0.5)):
+  with open(latexFn, 'a') as f:
+    f.write('\n \\begin{figure}[H] \n')
+    f.write('\\centering \n')
+    f.write('\\includegraphics[scale=' + scale + ']{' + figFn + '} \n')
+    if figCaption is not None:
+      f.write('\\caption{' + figCaption + '} \n')
+    if figLabel is not None:
+      f.write('\\label{' + figLabel + '} \n')
+    f.write('\\end{figure} \n')
 
 
 ############################ Creating figures ################
